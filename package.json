@@ -7,7 +7,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "inngest": "npx inngest-cli@latest dev"
+    "inngest": "npx inngest-cli@latest dev",
+    "db:migrate": "npx prisma db migrate",
+    "db:studio": "npx prisma studio"
   },
   "dependencies": {
     "@e2b/code-interpreter": "^1.5.1",
