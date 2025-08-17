@@ -4,25 +4,30 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useTRPC } from "@/trpc/client";
 import { useMutation, useQuery } from "@tanstack/react-query";
+import { useRouter } from "next/router";
 import { useState } from "react";
 import { toast } from "sonner";
 
 export default function Home() {
+  const router = useRouter();
+
   const [value, setValue] = useState("");
   const trpc = useTRPC();
 
   const { data: messages } = useQuery(trpc.messages.getMany.queryOptions());
 
-  const { mutate: createMessage, isPending } = useMutation(
-    trpc.messages.create.mutationOptions({
-      onSuccess: () => {
+  const { mutate: creteProject, isPending } = useMutation(
+    trpc.projects.create.mutationOptions({
+      onSuccess: (project) => {
+        router.push(`/projects/${project.id}`);
         toast.success("Message created");
       },
     })
   );
 
   const handleSubmit = async () => {
-    createMessage({ value });
+    console.log("Clicked");
+    creteProject({ value });
   };
 
   return (

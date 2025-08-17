@@ -8,6 +8,16 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model Project {
+  id String @id @default(uuid())
+  name String
+  messages Message[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+}
+
 enum MessageRole {
   USER
   ASSISTANT
@@ -26,15 +36,20 @@ model Message {
 
   fragment Fragment?
 
+  projectId String
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  
 }
 
 model Fragment {
   id String @id @default(uuid())
   messageId String @unique
 
-  message Message @relation(fields: [messageId], references: [id])
+  message Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
 
   sandboxUrl String
   title String
@@ -43,3 +58,5 @@ model Fragment {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
+
+
