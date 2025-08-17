@@ -3,8 +3,8 @@
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useTRPC } from "@/trpc/client";
-import { useMutation, useQuery } from "@tanstack/react-query";
-import { useRouter } from "next/router";
+import { useMutation } from "@tanstack/react-query";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -13,8 +13,6 @@ export default function Home() {
 
   const [value, setValue] = useState("");
   const trpc = useTRPC();
-
-  const { data: messages } = useQuery(trpc.messages.getMany.queryOptions());
 
   const { mutate: creteProject, isPending } = useMutation(
     trpc.projects.create.mutationOptions({
@@ -26,7 +24,7 @@ export default function Home() {
   );
 
   const handleSubmit = async () => {
-    console.log("Clicked");
+    // console.log("Clicked");
     creteProject({ value });
   };
 
@@ -44,8 +42,6 @@ export default function Home() {
       >
         Summarize
       </Button>
-
-      {JSON.stringify(messages, null, 2)}
     </div>
   );
 }

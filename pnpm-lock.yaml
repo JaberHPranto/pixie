@@ -15,8 +15,8 @@ importers:
         specifier: ^5.2.1
         version: 5.2.1(react-hook-form@7.62.0(react@19.1.0))
       '@inngest/agent-kit':
-        specifier: ^0.9.0
-        version: 0.9.0(inngest@3.40.1(express@5.1.0)(next@15.4.6(@opentelemetry/api@1.9.0)(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(typescript@5.9.2))
+        specifier: ^0.8.3
+        version: 0.8.3(next@15.4.6(@opentelemetry/api@1.9.0)(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(typescript@5.9.2)
       '@prisma/client':
         specifier: ^6.13.0
         version: 6.14.0(prisma@6.14.0(typescript@5.9.2))(typescript@5.9.2)
@@ -130,7 +130,7 @@ importers:
         version: 8.6.0(react@19.1.0)
       inngest:
         specifier: ^3.40.1
-        version: 3.40.1(express@5.1.0)(next@15.4.6(@opentelemetry/api@1.9.0)(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(typescript@5.9.2)
+        version: 3.40.1(express@4.21.2)(next@15.4.6(@opentelemetry/api@1.9.0)(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(typescript@5.9.2)
       input-otp:
         specifier: ^1.4.2
         version: 1.4.2(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
@@ -161,6 +161,9 @@ importers:
       react-resizable-panels:
         specifier: ^3.0.4
         version: 3.0.4(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
+      react-textarea-autosize:
+        specifier: ^8.5.9
+        version: 8.5.9(@types/react@19.1.10)(react@19.1.0)
       recharts:
         specifier: ^2.15.4
         version: 2.15.4(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
@@ -180,8 +183,8 @@ importers:
         specifier: ^1.1.2
         version: 1.1.2(@types/react-dom@19.1.7(@types/react@19.1.10))(@types/react@19.1.10)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       zod:
-        specifier: ^3.22.4
-        version: 3.22.4
+        specifier: ^3.25.76
+        version: 3.25.76
     devDependencies:
       '@eslint/eslintrc':
         specifier: ^3
@@ -628,10 +631,8 @@ packages:
     cpu: [x64]
     os: [win32]
 
-  '@inngest/agent-kit@0.9.0':
-    resolution: {integrity: sha512-/TdogdUvdo4mKa2CLnfQPRTXOW5bgDuvw1SewKS+iszDUzScH90nVCq/GFMEnTFvQnuFNSda080AScF+11ehag==}
-    peerDependencies:
-      inngest: '>=3.39.0'
+  '@inngest/agent-kit@0.8.3':
+    resolution: {integrity: sha512-mZcKFIAF8ZFkiKIvdtpT0EzlvhBuFO6XyDTptA1SX1fnZTtxhi5e47Ck+caAauFKRvmdlKJrnbIrRJk9sR6vPg==}
 
   '@inngest/ai@0.1.2':
     resolution: {integrity: sha512-79Ez/2142GU5Fo44fMxo8rW6PaeVvIFnYqePdEeGTiymTGMMmcsAtrMTfnvq4AnMorFnrtTh6rr6P9xlSdhPJA==}
@@ -3135,6 +3136,42 @@ packages:
   inherits@2.0.4:
     resolution: {integrity: sha512-k/vGaX4/Yla3WzyMCvTQOXYeIHvqOKtnqBduzTHpzpQZzAskKMhZ2K+EnBiSM9zGSoIFeMpXKxa4dYeZIQqewQ==}
 
+  inngest@3.32.5:
+    resolution: {integrity: sha512-jBxILtxhsO1FuU+RwnhzPGRiAIQv/IUcOnIM+3TbGAr+6+p5jjHK0tNw1sAlRo/UKNUwQ1wDodqNhljxSejhsA==}
+    engines: {node: '>=14'}
+    peerDependencies:
+      '@sveltejs/kit': '>=1.27.3'
+      '@vercel/node': '>=2.15.9'
+      aws-lambda: '>=1.0.7'
+      express: '>=4.19.2'
+      fastify: '>=4.21.0'
+      h3: '>=1.8.1'
+      hono: '>=4.2.7'
+      koa: '>=2.14.2'
+      next: '>=12.0.0'
+      typescript: '>=4.7.2'
+    peerDependenciesMeta:
+      '@sveltejs/kit':
+        optional: true
+      '@vercel/node':
+        optional: true
+      aws-lambda:
+        optional: true
+      express:
+        optional: true
+      fastify:
+        optional: true
+      h3:
+        optional: true
+      hono:
+        optional: true
+      koa:
+        optional: true
+      next:
+        optional: true
+      typescript:
+        optional: true
+
   inngest@3.40.1:
     resolution: {integrity: sha512-SC9Ly28i8NI+WymttE8Jk41L9r/wHXWOnlQoy7e7yoQyZI+R2C4S77DpFwzgEaqGT/H8puc1VDli84RoaffXBg==}
     engines: {node: '>=14'}
@@ -3363,6 +3400,9 @@ packages:
   language-tags@1.0.9:
     resolution: {integrity: sha512-MbjN408fEndfiQXbFQ1vnd+1NoLDsnQW41410oQBXiyXDMYH5z505juWa4KUE1LqxRC7DgOgZDbKLxHIwm27hA==}
     engines: {node: '>=0.10'}
+
+  layerr@3.0.0:
+    resolution: {integrity: sha512-tv754Ki2dXpPVApOrjTyRo4/QegVb9eVFq4mjqp4+NM5NaX7syQvN5BBNfV/ZpAHCEHV24XdUVrBAoka4jt3pA==}
 
   levn@0.4.1:
     resolution: {integrity: sha512-+bT2uH4E5LGE7h/n3evcS/sQlJXCpIp6ym8OWJ5eV6+67Dsql/LaaT7qJBAt2rzfoa/5QBGBhxDix1dMt2kQKQ==}
@@ -3894,6 +3934,12 @@ packages:
       '@types/react':
         optional: true
 
+  react-textarea-autosize@8.5.9:
+    resolution: {integrity: sha512-U1DGlIQN5AwgjTyOEnI1oCcMuEr1pv1qOtklB2l4nyMGbHzWrI0eFsYK0zos2YWqAolJyG0IWJaqWmWj5ETh0A==}
+    engines: {node: '>=10'}
+    peerDependencies:
+      react: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
+
   react-transition-group@4.4.5:
     resolution: {integrity: sha512-pZcd1MCJoiKiBR2NRxeCRg13uCXbydPnmB4EOeRrY7480qNWO8IIgQG6zlDkm6uRMsURXPuKq0GWtiM59a5Q6g==}
     peerDependencies:
@@ -4250,6 +4296,10 @@ packages:
     engines: {node: '>=14.17'}
     hasBin: true
 
+  ulidx@2.4.1:
+    resolution: {integrity: sha512-xY7c8LPyzvhvew0Fn+Ek3wBC9STZAuDI/Y5andCKi9AX6/jvfaX45PhsDX8oxgPL0YFp0Jhr8qWMbS/p9375Xg==}
+    engines: {node: '>=16'}
+
   unbox-primitive@1.1.0:
     resolution: {integrity: sha512-nWJ91DjeOkej/TA8pXQ3myruKpKEYgqvpw9lz4OPHj/NWFNluYrjbz9j01CJ8yKQd2g4jFoOkINCTW2I5LEEyw==}
     engines: {node: '>= 0.4'}
@@ -4273,6 +4323,33 @@ packages:
     peerDependencies:
       '@types/react': '*'
       react: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0 || ^19.0.0-rc
+    peerDependenciesMeta:
+      '@types/react':
+        optional: true
+
+  use-composed-ref@1.4.0:
+    resolution: {integrity: sha512-djviaxuOOh7wkj0paeO1Q/4wMZ8Zrnag5H6yBvzN7AKKe8beOaED9SF5/ByLqsku8NP4zQqsvM2u3ew/tJK8/w==}
+    peerDependencies:
+      '@types/react': '*'
+      react: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
+    peerDependenciesMeta:
+      '@types/react':
+        optional: true
+
+  use-isomorphic-layout-effect@1.2.1:
+    resolution: {integrity: sha512-tpZZ+EX0gaghDAiFR37hj5MgY6ZN55kLiPkJsKxBMZ6GZdOSPJXiOzPM984oPYZ5AnehYx5WQp1+ME8I/P/pRA==}
+    peerDependencies:
+      '@types/react': '*'
+      react: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
+    peerDependenciesMeta:
+      '@types/react':
+        optional: true
+
+  use-latest@1.3.0:
+    resolution: {integrity: sha512-mhg3xdm9NaM8q+gLT8KryJPnRFOz1/5XPBhmDEVZK1webPzDjrPk7f/mbpeLqTgB9msytYWANxgALOCJKnLvcQ==}
+    peerDependencies:
+      '@types/react': '*'
+      react: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
     peerDependenciesMeta:
       '@types/react':
         optional: true
@@ -4687,19 +4764,29 @@ snapshots:
   '@img/sharp-win32-x64@0.34.3':
     optional: true
 
-  '@inngest/agent-kit@0.9.0(inngest@3.40.1(express@5.1.0)(next@15.4.6(@opentelemetry/api@1.9.0)(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(typescript@5.9.2))':
+  '@inngest/agent-kit@0.8.3(next@15.4.6(@opentelemetry/api@1.9.0)(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(typescript@5.9.2)':
     dependencies:
       '@dmitryrechkin/json-schema-to-zod': 1.0.1
       '@inngest/ai': 0.1.2
       '@modelcontextprotocol/sdk': 1.17.3
       eventsource: 3.0.7
       express: 4.21.2
-      inngest: 3.40.1(express@5.1.0)(next@15.4.6(@opentelemetry/api@1.9.0)(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(typescript@5.9.2)
+      inngest: 3.32.5(express@4.21.2)(next@15.4.6(@opentelemetry/api@1.9.0)(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(typescript@5.9.2)
       xxhashjs: 0.2.2
       zod: 3.25.76
       zod-to-json-schema: 3.24.6(zod@3.25.76)
     transitivePeerDependencies:
+      - '@sveltejs/kit'
+      - '@vercel/node'
+      - aws-lambda
+      - encoding
+      - fastify
+      - h3
+      - hono
+      - koa
+      - next
       - supports-color
+      - typescript
 
   '@inngest/ai@0.1.2':
     dependencies:
@@ -7711,7 +7798,32 @@ snapshots:
 
   inherits@2.0.4: {}
 
-  inngest@3.40.1(express@5.1.0)(next@15.4.6(@opentelemetry/api@1.9.0)(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(typescript@5.9.2):
+  inngest@3.32.5(express@4.21.2)(next@15.4.6(@opentelemetry/api@1.9.0)(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(typescript@5.9.2):
+    dependencies:
+      '@bufbuild/protobuf': 2.6.3
+      '@inngest/ai': 0.1.2
+      '@jpwilliams/waitgroup': 2.1.1
+      '@types/debug': 4.1.12
+      canonicalize: 1.0.8
+      chalk: 4.1.2
+      cross-fetch: 4.1.0
+      debug: 4.4.1
+      hash.js: 1.1.7
+      json-stringify-safe: 5.0.1
+      ms: 2.1.3
+      serialize-error-cjs: 0.1.4
+      strip-ansi: 5.2.0
+      ulidx: 2.4.1
+      zod: 3.22.4
+    optionalDependencies:
+      express: 4.21.2
+      next: 15.4.6(@opentelemetry/api@1.9.0)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
+      typescript: 5.9.2
+    transitivePeerDependencies:
+      - encoding
+      - supports-color
+
+  inngest@3.40.1(express@4.21.2)(next@15.4.6(@opentelemetry/api@1.9.0)(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(typescript@5.9.2):
     dependencies:
       '@bufbuild/protobuf': 2.6.3
       '@inngest/ai': 0.1.5
@@ -7736,7 +7848,7 @@ snapshots:
       temporal-polyfill: 0.2.5
       zod: 3.22.4
     optionalDependencies:
-      express: 5.1.0
+      express: 4.21.2
       next: 15.4.6(@opentelemetry/api@1.9.0)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       typescript: 5.9.2
     transitivePeerDependencies:
@@ -7933,6 +8045,8 @@ snapshots:
   language-tags@1.0.9:
     dependencies:
       language-subtag-registry: 0.3.23
+
+  layerr@3.0.0: {}
 
   levn@0.4.1:
     dependencies:
@@ -8406,6 +8520,15 @@ snapshots:
       tslib: 2.8.1
     optionalDependencies:
       '@types/react': 19.1.10
+
+  react-textarea-autosize@8.5.9(@types/react@19.1.10)(react@19.1.0):
+    dependencies:
+      '@babel/runtime': 7.28.3
+      react: 19.1.0
+      use-composed-ref: 1.4.0(@types/react@19.1.10)(react@19.1.0)
+      use-latest: 1.3.0(@types/react@19.1.10)(react@19.1.0)
+    transitivePeerDependencies:
+      - '@types/react'
 
   react-transition-group@4.4.5(react-dom@19.1.0(react@19.1.0))(react@19.1.0):
     dependencies:
@@ -8890,6 +9013,10 @@ snapshots:
 
   typescript@5.9.2: {}
 
+  ulidx@2.4.1:
+    dependencies:
+      layerr: 3.0.0
+
   unbox-primitive@1.1.0:
     dependencies:
       call-bound: 1.0.4
@@ -8933,6 +9060,25 @@ snapshots:
     dependencies:
       react: 19.1.0
       tslib: 2.8.1
+    optionalDependencies:
+      '@types/react': 19.1.10
+
+  use-composed-ref@1.4.0(@types/react@19.1.10)(react@19.1.0):
+    dependencies:
+      react: 19.1.0
+    optionalDependencies:
+      '@types/react': 19.1.10
+
+  use-isomorphic-layout-effect@1.2.1(@types/react@19.1.10)(react@19.1.0):
+    dependencies:
+      react: 19.1.0
+    optionalDependencies:
+      '@types/react': 19.1.10
+
+  use-latest@1.3.0(@types/react@19.1.10)(react@19.1.0):
+    dependencies:
+      react: 19.1.0
+      use-isomorphic-layout-effect: 1.2.1(@types/react@19.1.10)(react@19.1.0)
     optionalDependencies:
       '@types/react': 19.1.10
 
