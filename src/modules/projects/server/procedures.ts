@@ -9,7 +9,7 @@ export const projectsRouter = createTRPCRouter({
   getOne: baseProcedure
     .input(z.object({ projectId: z.string() }))
     .query(async ({ input }) => {
-      const existingProject = await prisma.message.findUnique({
+      const existingProject = await prisma.project.findUnique({
         where: {
           id: input.projectId,
         },
