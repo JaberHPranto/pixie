@@ -59,6 +59,8 @@ export const FragmentWeb = ({ data }: Props) => {
       </div>
       <iframe
         key={fragmentKey}
+        title="sandbox"
+        aria-label="sandbox"
         className="w-full h-full"
         sandbox="allow-scripts allow-same-origin allow-forms"
         loading="lazy"
