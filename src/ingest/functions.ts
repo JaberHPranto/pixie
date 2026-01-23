@@ -34,8 +34,8 @@ export const codeAgentFunction = inngest.createFunction(
       description: "An expert coding agent",
       system: SYSTEM_PROMPT,
       model: openai({
-        model: "gpt-4.1",
-        defaultParameters: { temperature: 0.1 },
+        model: "gpt-4o",
+        // defaultParameters: { temperature: 0.1 },
       }),
       tools: [
         // Terminal Tool
@@ -63,7 +63,7 @@ export const codeAgentFunction = inngest.createFunction(
                 return stdout;
               } catch (error) {
                 console.error(
-                  `Command failed\n${error} \nstdout: ${buffers.stdout}\nstderr: ${buffers.stderr}`
+                  `Command failed\n${error} \nstdout: ${buffers.stdout}\nstderr: ${buffers.stderr}`,
                 );
 
                 return `Command failed\n${error} \nstdout: ${buffers.stdout}\nstderr: ${buffers.stderr}`;
@@ -81,12 +81,12 @@ export const codeAgentFunction = inngest.createFunction(
               z.object({
                 path: z.string(),
                 content: z.string(),
-              })
+              }),
             ),
           }) as any,
           handler: async (
             { files },
-            { step, network }: Tool.Options<AgentState>
+            { step, network }: Tool.Options<AgentState>,
           ) => {
             const newFiles = await step?.run(
               "createOrUpdateFiles",
@@ -103,7 +103,7 @@ export const codeAgentFunction = inngest.createFunction(
                 } catch (error) {
                   return `Failed to create or update files: ${error}`;
                 }
-              }
+              },
             );
 
             if (typeof newFiles === "object")
@@ -215,5 +215,5 @@ export const codeAgentFunction = inngest.createFunction(
       files: result.state.data.files,
       summary: result.state.data.summary,
     };
-  }
+  },
 );

@@ -1,25 +1,33 @@
 "use client";
 import { Button } from "@/components/ui/button";
-import { Form, FormField } from "@/components/ui/form";
+import {
+  Form,
+  FormField,
+  FormMessage,
+  FormItem,
+  FormControl,
+} from "@/components/ui/form";
 import { cn } from "@/lib/utils";
 import { useTRPC } from "@/trpc/client";
 import { PROJECT_TEMPLATES } from "@/utils/data";
 import { useClerk } from "@clerk/nextjs";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { ArrowUpIcon, Loader2Icon } from "lucide-react";
+import { ArrowUpIcon, Loader2Icon, SparklesIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import React from "react";
 import { useForm } from "react-hook-form";
 import TextAreaAutosize from "react-textarea-autosize";
 import { toast } from "sonner";
 import { z } from "zod";
+import { PromptEnhancerDialog } from "./components/prompt-enhancer-dialog";
+import { MAX_MESSAGE_LENGTH } from "@/utils/constants";
 
 const formSchema = z.object({
   value: z
     .string()
     .min(1, { message: "Message is required" })
-    .max(1000, { message: "Message is too long" }),
+    .max(MAX_MESSAGE_LENGTH, { message: "Message is too long" }),
 });
 
 type FormType = z.infer<typeof formSchema>;
@@ -29,12 +37,13 @@ export const ProjectForm = () => {
   const clerk = useClerk();
 
   const [isFocused, setIsFocused] = React.useState(false);
+  const [showEnhancer, setShowEnhancer] = React.useState(false);
 
   const queryClient = useQueryClient();
 
   const trpc = useTRPC();
   const { mutateAsync: createMessage, isPending } = useMutation(
-    trpc.projects.create.mutationOptions({})
+    trpc.projects.create.mutationOptions({}),
   );
 
   const form = useForm<FormType>({
@@ -44,7 +53,9 @@ export const ProjectForm = () => {
     },
   });
 
-  const isButtonDisabled = isPending || form.getValues("value") === "";
+  const message = form.watch("value");
+  const isButtonDisabled =
+    isPending || !message || message.length > MAX_MESSAGE_LENGTH;
 
   const onSubmit = async (data: FormType) => {
     await createMessage(
@@ -59,8 +70,22 @@ export const ProjectForm = () => {
             clerk.openSignIn();
           } else toast.error(error.message);
         },
-      }
+      },
     );
+  };
+
+  const handleEnhancedPrompt = (enhancedPrompt: string) => {
+    form.setValue("value", enhancedPrompt);
+    toast.success("Prompt enhanced successfully!");
+  };
+
+  const handleOpenEnhancer = () => {
+    const currentValue = form.getValues("value");
+    if (!currentValue.trim()) {
+      toast.error("Please enter a prompt first");
+      return;
+    }
+    setShowEnhancer(true);
   };
 
   return (
@@ -71,29 +96,44 @@ export const ProjectForm = () => {
           "relative border p-4 pt-1 rounded-xl bg-sidebar dark:bg-sidebar transition-all",
           {
             "shadow-xs": isFocused,
-          }
+          },
         )}
       >
         <FormField
           control={form.control}
           name="value"
           render={({ field }) => (
-            <TextAreaAutosize
-              {...field}
-              onFocus={() => setIsFocused(true)}
-              onBlur={() => setIsFocused(false)}
-              disabled={isPending}
-              minRows={2}
-              maxRows={5}
-              className="pt-4 resize-none border-none w-full outline-none bg-transparent"
-              placeholder="What would you like to build?"
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
-                  e.preventDefault();
-                  form.handleSubmit(onSubmit)();
-                }
-              }}
-            />
+            <FormItem className="space-y-0">
+              <FormControl>
+                <TextAreaAutosize
+                  {...field}
+                  onFocus={() => setIsFocused(true)}
+                  onBlur={() => setIsFocused(false)}
+                  disabled={isPending}
+                  minRows={2}
+                  maxRows={5}
+                  className="pt-4 resize-none border-none w-full outline-none bg-transparent"
+                  placeholder="What would you like to build?"
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
+                      e.preventDefault();
+                      form.handleSubmit(onSubmit)();
+                    }
+                  }}
+                />
+              </FormControl>
+              <div
+                className={cn(
+                  "absolute -bottom-5 right-5 text-[10px] font-mono transition-colors font-medium",
+                  field.value.length > MAX_MESSAGE_LENGTH
+                    ? "text-destructive font-bold"
+                    : "text-gray-400",
+                )}
+              >
+                {field.value.length} / {MAX_MESSAGE_LENGTH}
+              </div>
+              <FormMessage className="text-[10px] absolute bottom-12 left-4" />
+            </FormItem>
           )}
         />
 
@@ -105,23 +145,42 @@ export const ProjectForm = () => {
             &nbsp; to submit
           </div>
 
-          <Button
-            className={cn(
-              "size-8 rounded-full flex items-center justify-center",
-              isButtonDisabled && "bg-muted-foreground border"
-            )}
-            disabled={isButtonDisabled}
-          >
-            {isPending ? (
-              <Loader2Icon className="size-4 animate-spin" />
-            ) : (
-              <ArrowUpIcon />
-            )}
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              className="h-8 gap-1.5"
+              onClick={handleOpenEnhancer}
+              disabled={isPending || !form.watch("value")}
+            >
+              <SparklesIcon className="size-3.5" />
+              <span className="hidden sm:inline">Enhance</span>
+            </Button>
+
+            <Button
+              type="submit"
+              className={cn(
+                "size-8 rounded-full flex items-center justify-center",
+                isButtonDisabled && "bg-muted-foreground border",
+              )}
+              disabled={isButtonDisabled}
+              onClick={(e) => {
+                e.preventDefault();
+                form.handleSubmit(onSubmit)();
+              }}
+            >
+              {isPending ? (
+                <Loader2Icon className="size-4 animate-spin" />
+              ) : (
+                <ArrowUpIcon />
+              )}
+            </Button>
+          </div>
         </div>
       </form>
 
-      <div className="max-w-3xl mx-auto md:flex flex-wrap justify-center gap-2 hidden mt-4">
+      <div className="max-w-3xl mx-auto md:flex flex-wrap justify-center gap-2 hidden mt-8">
         {PROJECT_TEMPLATES.map((template) => (
           <Button
             key={template.title}
@@ -130,10 +189,17 @@ export const ProjectForm = () => {
             className="bg-white dark:bg-sidebar"
             onClick={() => form.setValue("value", template.prompt)}
           >
-            {template.emoji} {template.title}
+            {template.emoji} &nbsp; {template.title}
           </Button>
         ))}
       </div>
+
+      <PromptEnhancerDialog
+        open={showEnhancer}
+        onOpenChange={setShowEnhancer}
+        originalPrompt={form.watch("value")}
+        onAccept={handleEnhancedPrompt}
+      />
     </Form>
   );
 };

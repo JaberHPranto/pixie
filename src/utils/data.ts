@@ -1,50 +1,50 @@
 export const PROJECT_TEMPLATES = [
   {
-    emoji: "🎬",
-    title: "Build a Netflix clone",
+    emoji: "📝",
+    title: "Blog Card",
     prompt:
-      "Build a Netflix-style homepage with a hero banner (use a nice, dark-mode compatible gradient here), movie sections, responsive cards, and a modal for viewing details using mock data and local state. Use dark mode.",
+      "Design a premium, responsive blog card component. Use an image placeholder with a fixed 16:9 aspect ratio, a small colored category tag, and clean typography for the title and excerpt. Include an author section at the bottom with a rounded avatar and Lucide icons for reading time. Add a subtle shadow and a smooth lift animation on hover.",
   },
   {
-    emoji: "📦",
-    title: "Build an admin dashboard",
+    emoji: "💰",
+    title: "Pricing Section",
     prompt:
-      "Create an admin dashboard with a sidebar, stat cards, a chart placeholder, and a basic table with filter and pagination using local state. Use clear visual grouping and balance in your design for a modern, professional look.",
+      "Build a modern 3-tier pricing section (Free, Pro, Enterprise) with a sleek monthly/yearly billing toggle. The 'Pro' card should be highlighted with a distinctive border and a 'Most Popular' badge. Use Lucide checkmark icons for feature lists and high-contrast primary buttons. Ensure balanced spacing and a clean background.",
   },
   {
-    emoji: "📋",
-    title: "Build a kanban board",
+    emoji: "🎞️",
+    title: "Movie Carousel",
     prompt:
-      "Build a kanban board with drag-and-drop using react-beautiful-dnd and support for adding and removing tasks with local state. Use consistent spacing, column widths, and hover effects for a polished UI.",
+      "Create an interactive movie carousel with horizontal scrolling. Each item should feature a high-quality poster placeholder, movie title, and a star rating overlay. Implement navigation arrows that appear on hover and use a smooth scale effect for the centered item. Ensure the scrollbar is hidden for a cinematic look.",
   },
   {
-    emoji: "🗂️",
-    title: "Build a file manager",
+    emoji: "📧",
+    title: "Contact Form",
     prompt:
-      "Build a file manager with folder list, file grid, and options to rename or delete items using mock data and local state. Focus on spacing, clear icons, and visual distinction between folders and files.",
+      "Design a sleek, centered contact form with fields for Name, Email, and Message. Use custom focus rings and error states for validation. Include a submission button with a loading spinner state and a subtle glassmorphism background effect. Add a clear success message transition once submitted.",
   },
   {
-    emoji: "📺",
-    title: "Build a YouTube clone",
+    emoji: "❓",
+    title: "FAQ Accordion",
     prompt:
-      "Build a YouTube-style homepage with mock video thumbnails, a category sidebar, and a modal preview with title and description using local state. Ensure clean alignment and a well-organized grid layout.",
+      "Build a polished FAQ accordion component. Each question should have a smooth expand/collapse transition using local state, with a Chevron icon that rotates when active. Use subtle borders and consistent padding to create a clean, organized layout. Focus on great typography for better readability of the answers.",
   },
   {
-    emoji: "🛍️",
-    title: "Build a store page",
+    emoji: "🔑",
+    title: "Login Section",
     prompt:
-      "Build a store page with category filters, a product grid, and local cart logic to add and remove items. Focus on clear typography, spacing, and button states for a great e-commerce UI.",
+      "Create a professional login section with a split-screen layout. One side should feature a vibrant mesh gradient or an abstract image placeholder, while the other contains a clean white form. Include email/password inputs with Lucide icons, a 'Stay logged in' checkbox, and styled social login buttons for Google and GitHub.",
   },
   {
-    emoji: "🏡",
-    title: "Build an Airbnb clone",
+    emoji: "📰",
+    title: "Newsletter Signup",
     prompt:
-      "Build an Airbnb-style listings grid with mock data, filter sidebar, and a modal with property details using local state. Use card spacing, soft shadows, and clean layout for a welcoming design.",
+      "Design an eye-catching newsletter signup card. Feature a bold, centered headline and a short lead-in text. Use a combined input and button group for a compact look. Add a subtle pulse animation to the submit button and ensure there's a beautiful success state after the user clicks subscribe.",
   },
   {
-    emoji: "🎵",
-    title: "Build a Spotify clone",
+    emoji: "✨",
+    title: "Portfolio Hero",
     prompt:
-      "Build a Spotify-style music player with a sidebar for playlists, a main area for song details, and playback controls. Use local state for managing playback and song selection. Prioritize layout balance and intuitive control placement for a smooth user experience. Use dark mode.",
+      "Build a stunning portfolio hero section with a focus on bold typography. Use a large H1 headline with a colored gradient span, followed by a concise introductory paragraph. Include a primary 'Start Project' and a secondary 'View Work' button with custom hover states. Add a subtle floating animation to background elements for extra polish.",
   },
 ] as const;

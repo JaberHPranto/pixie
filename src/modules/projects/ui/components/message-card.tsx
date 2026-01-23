@@ -1,3 +1,4 @@
+import { MarkdownRenderer } from "@/components/markdown-renderer";
 import { Card } from "@/components/ui/card";
 import { Fragment, MessageRole, MessageType } from "@/generated/prisma";
 import { cn } from "@/lib/utils";
@@ -28,7 +29,7 @@ export const MessageCard = ({
     return (
       <div className="flex justify-end pb-4 pr-2 pl-10">
         <Card className="rounded-lg bg-muted p-3 shadow-none border-none max-w-[80%] break-words">
-          {content}
+          <MarkdownRenderer content={content} />
         </Card>
       </div>
     );
@@ -63,7 +64,7 @@ export const MessageCard = ({
               className={cn(
                 "flex items-start text-start gap-2 border rounded-lg bg-muted w-fit p-3 hover:bg-accent transition-colors",
                 isActiveFragment &&
-                  "bg-primary text-primary-foreground border-primary hover:bg-primary"
+                  "bg-primary text-primary-foreground border-primary hover:bg-primary",
               )}
               onClick={onFragmentClick}
             >

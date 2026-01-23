@@ -1,6 +1,7 @@
 import { inngest } from "@/ingest/client";
 import { prisma } from "@/lib/db";
 import { protectedProcedure, createTRPCRouter } from "@/trpc/init";
+import { MAX_MESSAGE_LENGTH } from "@/utils/constants";
 import { TRPCError } from "@trpc/server";
 import { generateSlug } from "random-word-slugs";
 import { z } from "zod";
@@ -42,8 +43,8 @@ export const projectsRouter = createTRPCRouter({
         value: z
           .string()
           .min(1, { message: "Message is required" })
-          .max(2000, { message: "Prompt is too long" }),
-      })
+          .max(MAX_MESSAGE_LENGTH, { message: "Prompt is too long" }),
+      }),
     )
     .mutation(async ({ input, ctx }) => {
       const createdProject = await prisma.project.create({
