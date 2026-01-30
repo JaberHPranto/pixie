@@ -157,7 +157,19 @@ export const PromptEnhancerDialog = ({
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-4xl h-[90vh] flex flex-col p-0 gap-0">
+      <DialogContent
+        className="sm:max-w-4xl h-[90vh] flex flex-col p-0 gap-0"
+        onPointerDownOutside={(e) => {
+          if (isPending) {
+            e.preventDefault();
+          }
+        }}
+        onEscapeKeyDown={(e) => {
+          if (isPending) {
+            e.preventDefault();
+          }
+        }}
+      >
         <DialogHeader className="px-6 pt-6 pb-4 border-b shrink-0">
           <DialogTitle className="flex items-center gap-2 text-xl">
             <SparklesIcon className="size-5 text-primary" />
