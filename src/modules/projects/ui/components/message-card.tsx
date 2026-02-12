@@ -3,7 +3,7 @@ import { Card } from "@/components/ui/card";
 import { Fragment, MessageRole, MessageType } from "@/generated/prisma";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
-import { ChevronRightIcon, Code2Icon } from "lucide-react";
+import { AlertCircle, ChevronRightIcon, Code2Icon } from "lucide-react";
 import Image from "next/image";
 
 interface Props {
@@ -39,7 +39,7 @@ export const MessageCard = ({
     return (
       <div
         className={cn("flex flex-col group px-2 pb-4", {
-          "text-red-700 dark:text-red-500": type === "ERROR",
+          "text-red-700 dark:text-red-500/90": type === "ERROR",
         })}
       >
         <div className="flex items-center gap-2 pl-2">
@@ -57,7 +57,7 @@ export const MessageCard = ({
         </div>
 
         <div className="pl-8.5 flex flex-col gap-y-4">
-          <span>{content}</span>
+          <span className="dark:text-white/75">{content}</span>
 
           {fragment && (
             <button

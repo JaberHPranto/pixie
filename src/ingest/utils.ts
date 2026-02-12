@@ -9,7 +9,7 @@ export async function getSandbox(sandboxId: string) {
 
 export function lastAssistantTextMessage(result: AgentResult) {
   const lastAssistantTextMessageIndex = result.output.findLastIndex(
-    (message) => message.role === "assistant"
+    (message) => message.role === "assistant",
   );
 
   const message = result.output[lastAssistantTextMessageIndex] as
@@ -21,4 +21,17 @@ export function lastAssistantTextMessage(result: AgentResult) {
       ? message.content
       : message.content.map((chunk) => chunk.text).join("")
     : undefined;
+}
+
+export function extractSummary(text: string | undefined): string {
+  if (!text) return "";
+
+  // Extract content between <task_summary> tags
+  const match = text.match(/<task_summary>\s*([\s\S]*?)\s*<\/task_summary>/i);
+  if (match && match[1]) {
+    return match[1].trim();
+  }
+
+  // Fallback: if no tags found, return the text as-is
+  return text.trim();
 }

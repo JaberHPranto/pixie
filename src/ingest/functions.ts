@@ -3,14 +3,21 @@ import { Sandbox } from "@e2b/code-interpreter";
 import {
   createAgent,
   createNetwork,
+  createState,
   createTool,
+  Message,
   openai,
   type Tool,
+  type NetworkRun,
 } from "@inngest/agent-kit";
 import { z } from "zod";
 import { inngest } from "./client";
-import { getSandbox, lastAssistantTextMessage } from "./utils";
-import { SYSTEM_PROMPT } from "@/utils/prompt";
+import { getSandbox, lastAssistantTextMessage, extractSummary } from "./utils";
+import {
+  FRAGMENT_TITLE_PROMPT,
+  RESPONSE_PROMPT,
+  SYSTEM_PROMPT,
+} from "@/utils/prompt";
 import { prisma } from "@/lib/db";
 import { searchUnsplashPhoto } from "@/lib/unsplash";
 
@@ -30,13 +37,54 @@ export const codeAgentFunction = inngest.createFunction(
       return sandbox.sandboxId;
     });
 
+    const { previousMessages, lastFragmentFiles } = await step.run(
+      "get-previous-context",
+      async () => {
+        const formattedMessages: Message[] = [];
+        const messages = await prisma.message.findMany({
+          where: { projectId: event.data.projectId },
+          orderBy: { createdAt: "asc" },
+          include: { fragment: true },
+        });
+
+        let lastFiles = {};
+
+        for (const message of messages) {
+          formattedMessages.push({
+            type: "text",
+            role: message.role === "USER" ? "user" : "assistant",
+            content: message.content,
+          });
+
+          if (message.fragment && message.fragment.files) {
+            lastFiles = message.fragment.files as Record<string, string>;
+          }
+        }
+
+        return {
+          previousMessages: formattedMessages,
+          lastFragmentFiles: lastFiles,
+        };
+      },
+    );
+
+    const state = createState<AgentState>(
+      {
+        summary: "",
+        files: lastFragmentFiles,
+      },
+      {
+        messages: previousMessages,
+      },
+    );
+
     const codeAgent = createAgent<AgentState>({
       name: "code-agent",
       description: "An expert coding agent",
       system: SYSTEM_PROMPT,
       model: openai({
         // model: "gpt-5.2",
-        model: "gpt-4o",
+        model: "gpt-4.1",
         // defaultParameters: { temperature: 0.1 },
       }),
       tools: [
@@ -234,7 +282,8 @@ export const codeAgentFunction = inngest.createFunction(
 
           if (lastAssistantText && network) {
             if (lastAssistantText.includes("<task_summary>")) {
-              network.state.data.summary = lastAssistantText;
+              // Extract clean summary content from XML tags
+              network.state.data.summary = extractSummary(lastAssistantText);
             }
           }
 
@@ -247,6 +296,7 @@ export const codeAgentFunction = inngest.createFunction(
       name: "coding-agent-network",
       agents: [codeAgent],
       maxIter: 15,
+      defaultState: state,
       router: async ({ network }) => {
         const summary = network.state.data.summary;
 
@@ -259,11 +309,61 @@ export const codeAgentFunction = inngest.createFunction(
       },
     });
 
-    const result = await network.run(event.data.value);
+    let result: NetworkRun<AgentState> | undefined;
 
-    const isError =
-      !result.state.data.summary ||
-      Object.keys(result.state.data.files || {}).length === 0;
+    result = await network.run(event.data.value, { state });
+
+    const fragmentTitleGenerator = createAgent({
+      name: "fragment-title-generator",
+      description:
+        "Generate a concise title for a code fragment based on the summary of the code.",
+      system: FRAGMENT_TITLE_PROMPT,
+      model: openai({
+        model: "gpt-4o-mini",
+        defaultParameters: { temperature: 0.1 },
+      }),
+    });
+
+    const responseGenerator = createAgent({
+      name: "response-generator",
+      description:
+        "Generate a user-friendly response message based on the summary of the code execution result. If the summary indicates an error, generate a helpful error message instead.",
+      system: RESPONSE_PROMPT,
+      model: openai({
+        model: "gpt-4o-mini",
+        defaultParameters: { temperature: 0.1 },
+      }),
+    });
+
+    const summary =
+      result?.state?.data?.summary?.trim() ||
+      "Created your application successfully.";
+
+    const { output: fragmentTitleOutput } =
+      await fragmentTitleGenerator.run(summary);
+
+    const { output: responseContentOutput } =
+      await responseGenerator.run(summary);
+
+    const generateFragmentTitle = () => {
+      const title = fragmentTitleOutput[0];
+
+      if (title.type !== "text") {
+        return "Fragment";
+      } else if (Array.isArray(title.content)) {
+        return title.content.map((chunk) => chunk).join("");
+      } else return title.content;
+    };
+
+    const generateResponseContent = () => {
+      const response = responseContentOutput[0];
+
+      if (response.type !== "text") {
+        return "Here is the summary of the code execution:\n\n" + summary;
+      } else if (Array.isArray(response.content)) {
+        return response.content.map((chunk) => chunk).join("");
+      } else return response.content;
+    };
 
     const sandboxUrl = await step.run("get-sandbox-url", async () => {
       const sandbox = await getSandbox(sandboxId);
@@ -271,8 +371,13 @@ export const codeAgentFunction = inngest.createFunction(
       return `http://${host}`;
     });
 
+    // Simple check: if we have files and a URL, it's a success
+    const hasFiles = result?.state?.data?.files
+      ? Object.keys(result.state.data.files).length > 0
+      : false;
+
     await step.run("save-result", async () => {
-      if (isError) {
+      if (!hasFiles) {
         return await prisma.message.create({
           data: {
             content: "Something went wrong. Please try again.",
@@ -285,15 +390,15 @@ export const codeAgentFunction = inngest.createFunction(
 
       return await prisma.message.create({
         data: {
-          content: result.state.data.summary,
+          content: generateResponseContent(),
           role: "ASSISTANT",
           type: "RESULT",
           projectId: event.data.projectId,
           fragment: {
             create: {
               sandboxUrl,
-              title: "Fragment",
-              files: (result.state as any)?.data.files,
+              title: generateFragmentTitle(),
+              files: result.state.data.files,
             },
           },
         },
@@ -302,9 +407,9 @@ export const codeAgentFunction = inngest.createFunction(
 
     return {
       url: sandboxUrl,
-      title: "Fragment",
+      title: generateFragmentTitle(),
       files: result.state.data.files,
-      summary: result.state.data.summary,
+      summary: generateResponseContent(),
     };
   },
 );
