@@ -20,6 +20,7 @@ import {
 } from "@/utils/prompt";
 import { prisma } from "@/lib/db";
 import { searchUnsplashPhoto } from "@/lib/unsplash";
+import { SANDBOX_TIMEOUT } from "@/utils/constants";
 
 interface AgentState {
   summary: string;
@@ -34,6 +35,7 @@ export const codeAgentFunction = inngest.createFunction(
   async ({ event, step }) => {
     const sandboxId = await step.run("get-sandbox-id", async () => {
       const sandbox = await Sandbox.create("pixie");
+      await sandbox.setTimeout(SANDBOX_TIMEOUT);
       return sandbox.sandboxId;
     });
 
@@ -43,8 +45,9 @@ export const codeAgentFunction = inngest.createFunction(
         const formattedMessages: Message[] = [];
         const messages = await prisma.message.findMany({
           where: { projectId: event.data.projectId },
-          orderBy: { createdAt: "asc" },
+          orderBy: { createdAt: "desc" },
           include: { fragment: true },
+          take: 5,
         });
 
         let lastFiles = {};
@@ -62,7 +65,7 @@ export const codeAgentFunction = inngest.createFunction(
         }
 
         return {
-          previousMessages: formattedMessages,
+          previousMessages: formattedMessages.reverse(),
           lastFragmentFiles: lastFiles,
         };
       },

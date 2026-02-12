@@ -1,10 +1,11 @@
+"use client";
 import { Button } from "@/components/ui/button";
 import { PRO_POINTS_THRESHOLD } from "@/utils/constants";
 import { useAuth } from "@clerk/nextjs";
 import { formatDuration, intervalToDuration } from "date-fns";
 import { CrownIcon } from "lucide-react";
 import Link from "next/link";
-import React from "react";
+import React, { useMemo } from "react";
 
 interface Props {
   points: number;
@@ -14,6 +15,23 @@ interface Props {
 export const UsageTracker = ({ points, msBeforeNext }: Props) => {
   const { has } = useAuth();
   const hasProAccess = has?.({ plan: "pro_user" });
+
+  const resetTime = useMemo(
+    () => () => {
+      try {
+        return formatDuration(
+          intervalToDuration({
+            start: new Date(),
+            end: new Date(Date.now() + msBeforeNext),
+          }),
+          { format: ["months", "days", "hours"] },
+        );
+      } catch (error) {
+        return "soon";
+      }
+    },
+    [msBeforeNext],
+  );
 
   if (hasProAccess && points > PRO_POINTS_THRESHOLD) return null;
 
@@ -25,14 +43,7 @@ export const UsageTracker = ({ points, msBeforeNext }: Props) => {
             {points} {hasProAccess ? "" : "free"} credits remaining
           </p>
           <p className="text-xs text-muted-foreground">
-            Resets in{" "}
-            {formatDuration(
-              intervalToDuration({
-                start: new Date(),
-                end: new Date(Date.now() + msBeforeNext),
-              }),
-              { format: ["months", "days", "hours"] },
-            )}
+            Resets in {resetTime()}
           </p>
         </div>
 
