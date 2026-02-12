@@ -49,7 +49,7 @@ export const ProjectForm = () => {
   const queryClient = useQueryClient();
 
   const trpc = useTRPC();
-  const { mutateAsync: createMessage, isPending } = useMutation(
+  const { mutateAsync: createProject, isPending } = useMutation(
     trpc.projects.create.mutationOptions({}),
   );
 
@@ -69,7 +69,6 @@ export const ProjectForm = () => {
   const onSubmit = async (data: FormType) => {
     let finalPrompt = data.value;
 
-    // If a blueprint is active, merge it into a JSON structure
     if (activeBlueprint) {
       const payload = {
         ...activeBlueprint,
@@ -78,16 +77,20 @@ export const ProjectForm = () => {
       finalPrompt = JSON.stringify(payload, null, 2);
     }
 
-    await createMessage(
+    await createProject(
       { value: finalPrompt },
       {
         onSuccess: (project) => {
           queryClient.invalidateQueries(trpc.projects.getMany.queryOptions());
+          queryClient.invalidateQueries(trpc.usage.status.queryOptions());
           router.push(`/projects/${project.id}`);
         },
         onError: (error) => {
           if (error.data?.code === "UNAUTHORIZED") {
             clerk.openSignIn();
+          } else if (error.data?.code === "TOO_MANY_REQUESTS") {
+            toast.error(error.message);
+            router.push("/pricing");
           } else toast.error(error.message);
         },
       },

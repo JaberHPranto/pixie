@@ -1,5 +1,6 @@
 import { inngest } from "@/ingest/client";
 import { prisma } from "@/lib/db";
+import { consumeCredits } from "@/modules/usage/utils";
 import { protectedProcedure, createTRPCRouter } from "@/trpc/init";
 import { MAX_MESSAGE_LENGTH } from "@/utils/constants";
 import { TRPCError } from "@trpc/server";
@@ -47,6 +48,18 @@ export const projectsRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ input, ctx }) => {
+      try {
+        await consumeCredits();
+      } catch (err) {
+        throw new TRPCError({
+          code: "TOO_MANY_REQUESTS",
+          message:
+            err instanceof Error
+              ? err.message
+              : "You have reached your free usage limit. Please upgrade to continue using the service.",
+        });
+      }
+
       const createdProject = await prisma.project.create({
         data: {
           name: generateSlug(2, {

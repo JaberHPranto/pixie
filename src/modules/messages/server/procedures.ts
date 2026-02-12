@@ -1,5 +1,6 @@
 import { inngest } from "@/ingest/client";
 import { prisma } from "@/lib/db";
+import { consumeCredits } from "@/modules/usage/utils";
 import { protectedProcedure, createTRPCRouter } from "@/trpc/init";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
@@ -32,7 +33,7 @@ export const messagesRouter = createTRPCRouter({
           .min(1, { message: "Message is required" })
           .max(1000, { message: "Prompt is too long" }),
         projectId: z.string(),
-      })
+      }),
     )
     .mutation(async ({ input, ctx }) => {
       const existingProject = await prisma.project.findUnique({
@@ -46,6 +47,18 @@ export const messagesRouter = createTRPCRouter({
         throw new TRPCError({
           code: "NOT_FOUND",
           message: "Project not found",
+        });
+      }
+
+      try {
+        await consumeCredits();
+      } catch (err) {
+        throw new TRPCError({
+          code: "TOO_MANY_REQUESTS",
+          message:
+            err instanceof Error
+              ? err.message
+              : "You have reached your free usage limit. Please upgrade to continue using the service.",
         });
       }
 
