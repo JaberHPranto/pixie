@@ -41,7 +41,7 @@ export async function searchUnsplashPhoto(
   accessKey: string,
   query: string,
   orientation?: "landscape" | "portrait" | "squarish" | null,
-) {
+): Promise<UnsplashSearchResponse> {
   const params = new URLSearchParams({
     query,
     per_page: "1",
@@ -62,7 +62,9 @@ export async function searchUnsplashPhoto(
   );
 
   if (!response.ok) {
-    throw new Error(`Unsplash API error: ${response.statusText}`);
+    throw new Error(
+      `Unsplash API error: ${response.status} ${response.statusText}`,
+    );
   }
 
   const data = await response.json();

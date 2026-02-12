@@ -162,24 +162,26 @@ export const codeAgentFunction = inngest.createFunction(
               return "Unsplash access key is not configured.";
             }
 
-            const sandbox = await getSandbox(sandboxId);
+            let searchResult;
+            let photo;
 
-            const searchResult = await searchUnsplashPhoto(
-              accessKey,
-              query,
-              orientation,
-            );
+            try {
+              searchResult = await searchUnsplashPhoto(
+                accessKey,
+                query,
+                orientation,
+              );
+              photo = searchResult.results[0];
+            } catch (error) {
+              return `Failed to search Unsplash: ${error instanceof Error ? error.message : String(error)}`;
+            }
 
-            const photo = searchResult.results[0];
             if (searchResult.results.length === 0 || !photo) {
               return `No results found for query: ${query}`;
             }
 
             const imageUrl =
-              purpose === "background"
-                ? photo.urls.full
-                : (photo.urls.regular ?? photo.urls.regular);
-
+              purpose === "background" ? photo.urls.full : photo.urls.regular;
             if (!imageUrl) {
               return `No suitable image URL found for query: ${query}`;
             }
@@ -195,6 +197,7 @@ export const codeAgentFunction = inngest.createFunction(
             const localPath = `${publicDir}/${safeSlug}.jpg`;
             const publicPath = `/assets/images/${safeSlug}.jpg`;
 
+            const sandbox = await getSandbox(sandboxId);
             await sandbox.commands.run(`mkdir -p "${publicDir}"`);
 
             // Use curl to download the image to the sandbox
