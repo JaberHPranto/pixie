@@ -12,6 +12,7 @@ import { inngest } from "./client";
 import { getSandbox, lastAssistantTextMessage } from "./utils";
 import { SYSTEM_PROMPT } from "@/utils/prompt";
 import { prisma } from "@/lib/db";
+import { searchUnsplashPhoto } from "@/lib/unsplash";
 
 interface AgentState {
   summary: string;
@@ -34,6 +35,7 @@ export const codeAgentFunction = inngest.createFunction(
       description: "An expert coding agent",
       system: SYSTEM_PROMPT,
       model: openai({
+        // model: "gpt-5.2",
         model: "gpt-4o",
         // defaultParameters: { temperature: 0.1 },
       }),
@@ -132,6 +134,92 @@ export const codeAgentFunction = inngest.createFunction(
               } catch (error) {
                 return `Failed to read files: ${error}`;
               }
+            });
+          },
+        }),
+
+        // unsplash tool
+        createTool({
+          name: "unsplashImage",
+          description:
+            "Search unsplash for an image and download an image into /public/assets/images folder in the sandbox. Return the local path and attribute the image.",
+          parameters: z.object({
+            query: z.string(),
+            orientation: z
+              .enum(["landscape", "portrait", "squarish"])
+              .default("landscape"),
+            purpose: z
+              .enum(["hero", "feature", "background", "listing", "generic"])
+              .default("generic"),
+            filenameHint: z.string().default(""),
+          }) as any,
+          handler: async (
+            { query, orientation, purpose, filenameHint },
+            { step },
+          ) => {
+            const accessKey = process.env.UNSPLASH_ACCESS_KEY;
+            if (!accessKey) {
+              return "Unsplash access key is not configured.";
+            }
+
+            const sandbox = await getSandbox(sandboxId);
+
+            const searchResult = await searchUnsplashPhoto(
+              accessKey,
+              query,
+              orientation,
+            );
+
+            const photo = searchResult.results[0];
+            if (searchResult.results.length === 0 || !photo) {
+              return `No results found for query: ${query}`;
+            }
+
+            const imageUrl =
+              purpose === "background"
+                ? photo.urls.full
+                : (photo.urls.regular ?? photo.urls.regular);
+
+            if (!imageUrl) {
+              return `No suitable image URL found for query: ${query}`;
+            }
+
+            const safeSlug = String(filenameHint ?? photo.id ?? query)
+              .toLowerCase()
+              .replace(/[^a-z0-9]+/g, "-") // Replaces any non-alphanumeric characters with hyphens
+
+              .replace(/(^-|-$)+/g, "") // Removes leading/trailing hyphens
+              .slice(0, 60); // Limits the length to 60 characters
+
+            const publicDir = "/home/user/public/assets/images";
+            const localPath = `${publicDir}/${safeSlug}.jpg`;
+            const publicPath = `/assets/images/${safeSlug}.jpg`;
+
+            await sandbox.commands.run(`mkdir -p "${publicDir}"`);
+
+            // Use curl to download the image to the sandbox
+            const cmd = `curl -L --fail --silent --show-error "${imageUrl}" -o "${localPath}"`;
+
+            const result = await sandbox.commands.run(cmd);
+
+            /**
+             * Exit Code Convention:
+             * 0 = Success (everything worked fine)
+             * Non-zero (1, 2, 3, etc.) = Error/Failure (something went wrong)
+             */
+            if (result.exitCode !== 0) {
+              return `Failed to download image. Command: ${cmd}, Error: ${result.stderr}`;
+            }
+
+            return JSON.stringify({
+              publicPath,
+              localFilePath: localPath,
+              attributions: {
+                photographerName: photo.user.name,
+                photographerUsername: photo.user.username,
+                photoLink: photo.links.html,
+                attributionUrl: `https://unsplash.com/@${photo.user.username}?utm_source=pixie&utm_medium=referral`,
+              },
             });
           },
         }),

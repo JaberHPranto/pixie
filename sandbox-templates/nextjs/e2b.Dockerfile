@@ -18,7 +18,7 @@ RUN npx --yes shadcn@2.6.3 add --all --yes
 # Move the Nextjs app to the home directory and remove the nextjs-app directory
 RUN mv /home/user/nextjs-app/* /home/user/ && rm -rf /home/user/nextjs-app
 
-# NOTE: we first copy and then removing the nextjs-app directory is because it's for AI to work on home directory. And we create teh nextjs-app directory inside the container as create-next-app operate in empty directory and /home/user might have some hidden files
+# NOTE: we first copy and then removing the nextjs-app directory is because it's for AI to work on home directory. And we create the nextjs-app directory inside the container as create-next-app operate in empty directory and /home/user might have some hidden files
 
 
   
