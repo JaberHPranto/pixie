@@ -8,17 +8,19 @@ import {
   ResizablePanelGroup,
 } from "@/components/ui/resizable";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { UserControl } from "@/components/user-control";
 import { Fragment } from "@/generated/prisma";
-import { CodeIcon, CrownIcon, EyeIcon } from "lucide-react";
+import { useTRPC } from "@/trpc/client";
+import { useAuth } from "@clerk/nextjs";
+import { useQuery } from "@tanstack/react-query";
+import { CodeIcon, CrownIcon, EyeIcon, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { Suspense, useState } from "react";
+import { ErrorBoundary } from "react-error-boundary";
 import { FragmentWeb } from "../components/fragment-web";
+import { InitialLoadingAnimation } from "../components/initial-loading-animation";
 import { MessagesContainer } from "../components/messages-container";
 import { ProjectHeader } from "../components/project-header";
-import { UserControl } from "@/components/user-control";
-import { useAuth } from "@clerk/nextjs";
-import { ErrorBoundary } from "react-error-boundary";
-import { InitialLoadingAnimation } from "../components/initial-loading-animation";
 
 interface Props {
   projectId: string;
@@ -29,6 +31,9 @@ type TabView = "code" | "preview";
 export const ProjectView = ({ projectId }: Props) => {
   const [activeFragment, setActiveFragment] = useState<Fragment | null>(null);
   const [tabState, setTabState] = useState<TabView>("preview");
+
+  const trpc = useTRPC();
+  const { data: usage } = useQuery(trpc.usage.status.queryOptions());
 
   const { has, isLoaded } = useAuth();
   const hasProAccess = isLoaded ? has?.({ plan: "pro_user" }) : false;
@@ -49,7 +54,14 @@ export const ProjectView = ({ projectId }: Props) => {
               </div>
             }
           >
-            <Suspense fallback={<div>Loading Messages...</div>}>
+            <Suspense
+              fallback={
+                <div className="flex h-full w-full items-center justify-center gap-2">
+                  <Loader2 className="w-6 h-6 text-primary animate-spin" />
+                  <p className="animate-pulse text-sm">Loading messages...</p>
+                </div>
+              }
+            >
               <ProjectHeader projectId={projectId} />
               <MessagesContainer
                 projectId={projectId}
@@ -80,6 +92,30 @@ export const ProjectView = ({ projectId }: Props) => {
                 </TabsTrigger>
               </TabsList>
               <div className="ml-auto flex items-center gap-x-2">
+                {isLoaded && (
+                  <div className="flex items-center gap-1 border rounded-lg py-[5px] px-2">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="20"
+                      height="20"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      className=" text-yellow-500/90"
+                    >
+                      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                      <path d="M3 12a9 9 0 1 0 18 0a9 9 0 1 0 -18 0" />
+                      <path d="M14.8 9a2 2 0 0 0 -1.8 -1h-2a2 2 0 1 0 0 4h2a2 2 0 1 1 0 4h-2a2 2 0 0 1 -1.8 -1" />
+                      <path d="M12 7v10" />
+                    </svg>
+                    <span className="text-xs">
+                      {usage?.remainingPoints || 0} credits
+                    </span>
+                  </div>
+                )}
                 {showUpgradeButton && (
                   <Button asChild size={"sm"} variant={"tertiary"}>
                     <Link href={"/pricing"}>

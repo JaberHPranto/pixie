@@ -1,18 +1,19 @@
 import { Toaster } from "@/components/ui/sonner";
 import { TRPCReactProvider } from "@/trpc/client";
-import type { Metadata } from "next";
 import { ClerkProvider } from "@clerk/nextjs";
+import type { Metadata } from "next";
 import { ThemeProvider } from "next-themes";
-import { Geist, Outfit } from "next/font/google";
+import { Fira_Code, Outfit } from "next/font/google";
 import "./globals.css";
 
-const geistSans = Geist({
+const outfit = Outfit({
   variable: "--font-geist-sans",
   subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
 });
 
-const outfit = Outfit({
-  variable: "--font-geist-mono",
+const jetbrainsMono = Fira_Code({
+  variable: "--font-fira-mono",
   subsets: ["latin"],
   weight: ["400", "500", "600", "700"],
 });
@@ -39,7 +40,7 @@ export default function RootLayout({
       <TRPCReactProvider>
         <html lang="en" suppressHydrationWarning>
           <body
-            className={`${geistSans.className} ${outfit.className} antialiased`}
+            className={`${outfit.className} ${jetbrainsMono.variable} antialiased`}
           >
             <ThemeProvider
               attribute={"class"}

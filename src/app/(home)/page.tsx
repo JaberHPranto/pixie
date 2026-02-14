@@ -6,22 +6,20 @@ import React from "react";
 const Home = () => {
   return (
     <div className="flex flex-col max-w-5xl mx-auto w-full">
-      <section className="space-y-6 py-[16vh] 2xl:py-48">
-        <div className="flex flex-col items-center ">
-          <Image
-            src={"/pixie-logo.png"}
-            alt="logo"
-            width={0}
-            height={0}
-            sizes="100vw"
-            className="h-32 w-auto shrink-0 hidden md:block"
-          />
-        </div>
-
-        <div className="space-y-4 -mt-6">
-          <h1 className="text-2xl md:text-5xl font-bold text-center">
-            Built something with Pixie
-          </h1>
+      <section className="space-y-6 py-[16vh] 2xl:py-68">
+        <div className="space-y-4 -mt-6 ">
+          <div className="relative ">
+            <h1 className="text-2xl md:text-5xl font-bold text-center">
+              Built something with Pixie
+            </h1>
+            <Image
+              src={"/pixie-icon-logo.png"}
+              alt="pixie logo"
+              width={52}
+              height={52}
+              className="absolute -top-10 right-46"
+            />
+          </div>
           <p className="text-lg md:text-xl text-muted-foreground text-center">
             Create apps and websites by chatting with AI
           </p>

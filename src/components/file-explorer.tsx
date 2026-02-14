@@ -102,7 +102,7 @@ export const FileExplorer = ({ files }: FileExplorerProps) => {
         setSelectedFile(filepath);
       }
     },
-    [files]
+    [files],
   );
 
   const handleCopy = useCallback(() => {
@@ -117,7 +117,7 @@ export const FileExplorer = ({ files }: FileExplorerProps) => {
 
   return (
     <ResizablePanelGroup direction="horizontal">
-      <ResizablePanel defaultSize={30} minSize={30} className="bg-sidebar">
+      <ResizablePanel defaultSize={25} minSize={20} className="bg-sidebar">
         <TreeView
           data={treeData}
           value={selectedFile}
@@ -125,10 +125,10 @@ export const FileExplorer = ({ files }: FileExplorerProps) => {
         />
       </ResizablePanel>
       <ResizableHandle />
-      <ResizablePanel defaultSize={70} minSize={50}>
+      <ResizablePanel defaultSize={75} minSize={50}>
         {selectedFile && files[selectedFile] ? (
           <div className="h-full w-full flex flex-col">
-            <div className="border-b bg-sidebar px-4 py-2 flex justify-between items-center gap-x-2">
+            <div className=" bg-sidebar px-4 py-2 flex justify-between items-center gap-x-2">
               <FileBreadcrumb path={selectedFile} />
               <Hint text="Copy to clipboard" side="bottom">
                 <Button

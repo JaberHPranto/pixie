@@ -235,8 +235,8 @@ export const ProjectForm = () => {
               onClick={handleOpenEnhancer}
               disabled={isPending || !form.watch("value")}
             >
-              <SparklesIcon className="size-3.5" />
-              <span className="hidden sm:inline">Enhance</span>
+              <SparklesIcon className="size-3" />
+              <span className="hidden sm:inline text-xs">Enhance</span>
             </Button>
 
             <Button
@@ -261,18 +261,27 @@ export const ProjectForm = () => {
         </div>
       </form>
 
-      <div className="max-w-3xl mx-auto md:flex flex-wrap justify-center gap-2 hidden mt-8">
-        {PROJECT_TEMPLATES.map((template) => (
-          <Button
-            key={template.title}
-            variant={"outline"}
-            size={"sm"}
-            className="bg-white dark:bg-sidebar"
-            onClick={() => form.setValue("value", template.prompt)}
-          >
-            {template.emoji} &nbsp; {template.title}
-          </Button>
-        ))}
+      <div className="relative mt-8 hidden md:block">
+        <div className="template-marquee-edge-left pointer-events-none absolute inset-y-0 left-0 z-10 w-20" />
+        <div className="template-marquee-edge-right pointer-events-none absolute inset-y-0 right-0 z-10 w-20" />
+
+        <div className="overflow-hidden rounded-full">
+          <div className="template-marquee-track flex w-max items-center gap-2 pr-2">
+            {[...PROJECT_TEMPLATES, ...PROJECT_TEMPLATES].map(
+              (template, index) => (
+                <Button
+                  key={`${template.title}-${index}`}
+                  variant={"outline"}
+                  size={"sm"}
+                  className="shrink-0 bg-white/90 backdrop-blur-sm dark:bg-sidebar/90 !text-xs"
+                  onClick={() => form.setValue("value", template.prompt)}
+                >
+                  {template.emoji} &nbsp; {template.title}
+                </Button>
+              ),
+            )}
+          </div>
+        </div>
       </div>
 
       <PromptEnhancerDialog

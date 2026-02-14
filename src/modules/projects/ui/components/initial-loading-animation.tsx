@@ -20,10 +20,6 @@ const animations = [
       { type: "bar", color: "bg-blue-400", width: "w-12", delay: 0.9 },
       { type: "bar", color: "bg-slate-500", width: "w-28", delay: 1 },
       { type: "bar", color: "bg-slate-400", width: "w-24", delay: 1.1 },
-      { type: "bar", color: "bg-slate-400", width: "w-16", delay: 1.2 },
-      { type: "dot", color: "bg-gray-500", size: "w-2 h-2", delay: 1.3 },
-      { type: "bar", color: "bg-slate-400", width: "w-20", delay: 1.4 },
-      { type: "dot", color: "bg-gray-500", size: "w-2 h-2", delay: 1.5 },
     ],
   },
   {
@@ -146,7 +142,7 @@ const CodeCard = ({
       </div>
 
       {/* Code Content */}
-      <div className="p-6 space-y-3 min-h-[280px]">
+      <div className="p-4 space-y-2 min-h-[220px]">
         {animation.elements.map((element, index) => (
           <div
             key={index}
@@ -184,10 +180,16 @@ export const InitialLoadingAnimation = () => {
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const currentIndexRef = useRef(0);
+  const cardStackRef = useRef<number[]>([]);
 
+  // Keep refs in sync
   useEffect(() => {
     currentIndexRef.current = currentIndex;
   }, [currentIndex]);
+
+  useEffect(() => {
+    cardStackRef.current = cardStack;
+  }, [cardStack]);
 
   useEffect(() => {
     const shuffled = [...Array(animations.length).keys()].sort(
@@ -201,26 +203,29 @@ export const InitialLoadingAnimation = () => {
     if (cardStack.length === 0) return;
 
     intervalRef.current = setInterval(() => {
-      let nextCard: number | undefined;
+      const currentStack = cardStackRef.current;
+      if (currentStack.length === 0) return;
 
+      const nextCard = currentStack[0];
+
+      // Update all states (React batches these)
       setCardStack((prev) => {
         const newStack = [...prev];
-        nextCard = newStack.shift();
-        if (nextCard !== undefined) {
-          newStack.push(nextCard);
-        }
+        newStack.shift();
+        newStack.push(nextCard);
         return newStack;
       });
 
-      if (nextCard !== undefined) {
-        setExitingIndex(currentIndexRef.current);
-        setCurrentIndex(nextCard);
+      setExitingIndex(currentIndexRef.current);
+      setCurrentIndex(nextCard);
 
-        timeoutRef.current = setTimeout(() => {
-          setExitingIndex(null);
-        }, 700);
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
       }
-    }, 4000); // Change card every 4 seconds
+      timeoutRef.current = setTimeout(() => {
+        setExitingIndex(null);
+      }, 700);
+    }, 6000);
 
     return () => {
       if (intervalRef.current) {
@@ -240,7 +245,7 @@ export const InitialLoadingAnimation = () => {
   return (
     <div className="flex items-center justify-center h-full w-full bg-background">
       <div className="flex flex-col items-center gap-8">
-        <div className="relative w-[420px] h-[360px]">
+        <div className="relative w-[360px] h-[300px]">
           {/* Background cards (deck effect) */}
           {nextAnimations
             .slice()
@@ -278,10 +283,10 @@ export const InitialLoadingAnimation = () => {
         </div>
 
         {/* Loading Text */}
-        <div className="text-center space-y-2">
+        <div className="text-center space-y-3">
           <h3
             key={currentIndex}
-            className="text-xl font-medium text-foreground animate-in fade-in duration-700"
+            className="text-lg font-medium text-foreground/90 animate-in fade-in duration-700"
           >
             {staticAnimation.title}
           </h3>
