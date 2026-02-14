@@ -1,6 +1,6 @@
 import { useTRPC } from "@/trpc/client";
 import { useSuspenseQuery } from "@tanstack/react-query";
-import React, { useEffect } from "react";
+import React, { useEffect, useRef } from "react";
 import { MessageCard } from "./message-card";
 import { MessageForm } from "./message-form";
 import { Fragment } from "@/generated/prisma";
@@ -18,7 +18,6 @@ export const MessagesContainer = ({
   setActiveFragment,
 }: Props) => {
   const trpc = useTRPC();
-
   const bottomRef = React.useRef<HTMLDivElement>(null);
   const lastAssistantMessageRef = React.useRef<string | null>(null);
 
@@ -26,9 +25,9 @@ export const MessagesContainer = ({
     trpc.messages.getMany.queryOptions(
       { projectId },
       {
-        refetchInterval: 5000, // 5s
-      }
-    )
+        refetchInterval: 5000,
+      },
+    ),
   );
 
   useEffect(() => {
@@ -52,7 +51,7 @@ export const MessagesContainer = ({
   }, [messages.length]);
 
   const lastMessage = messages?.[messages.length - 1];
-  const isLastMessageUser = lastMessage.role === "USER";
+  const isLastMessageUser = lastMessage?.role === "USER";
 
   return (
     <div className="flex flex-col flex-1 min-h-0">
@@ -72,7 +71,7 @@ export const MessagesContainer = ({
           ))}
         </div>
 
-        {isLastMessageUser && <MessageLoading />}
+        {isLastMessageUser && <MessageLoading projectId={projectId} />}
         <div ref={bottomRef} />
       </div>
 

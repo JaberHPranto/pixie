@@ -30,10 +30,39 @@ interface AgentState {
 }
 
 export const codeAgentFunction = inngest.createFunction(
-  { id: "code-agent", retries: 3 },
+  {
+    id: "code-agent",
+    retries: 3,
+    onFailure: async ({ error, event }) => {
+      console.error("Code Agent failed", { error, event });
+
+      try {
+        const projectId = (event as any)?.data?.projectId;
+        if (projectId) {
+          await prisma.message.create({
+            data: {
+              content: `Generation failed: ${error.message || "An unexpected error occurred. Please try again."}`,
+              role: "ASSISTANT",
+              type: "ERROR",
+              projectId: projectId,
+            },
+          });
+        }
+      } catch (dbError) {
+        console.error("Failed to save error message:", dbError);
+      }
+    },
+  },
   { event: "code-agent/run" },
-  async ({ event, step }) => {
+  async ({ event, step, publish }: any) => {
     const sandboxId = await step.run("get-sandbox-id", async () => {
+      await publish({
+        channel: `project-${event.data.projectId}`,
+        topic: "code-update",
+        data: {
+          message: "Initializing sandbox environment...",
+        },
+      });
       const sandbox = await Sandbox.create("pixie");
       await sandbox.setTimeout(SANDBOX_TIMEOUT);
       return sandbox.sandboxId;
@@ -42,6 +71,13 @@ export const codeAgentFunction = inngest.createFunction(
     const { previousMessages, lastFragmentFiles } = await step.run(
       "get-previous-context",
       async () => {
+        await publish({
+          channel: `project-${event.data.projectId}`,
+          topic: "code-update",
+          data: {
+            message: "Analyzing previous context...",
+          },
+        });
         const formattedMessages: Message[] = [];
         const messages = await prisma.message.findMany({
           where: { projectId: event.data.projectId },
@@ -99,6 +135,13 @@ export const codeAgentFunction = inngest.createFunction(
             command: z.string(),
           }) as any,
           handler: async ({ command }, { step }) => {
+            await publish({
+              channel: `project-${event.data.projectId}`,
+              topic: "code-update",
+              data: {
+                message: `Executing command: ${command}`,
+              },
+            });
             return await step?.run("terminal", async () => {
               const buffers = { stdout: "", stderr: "" };
 
@@ -141,6 +184,19 @@ export const codeAgentFunction = inngest.createFunction(
             { files },
             { step, network }: Tool.Options<AgentState>,
           ) => {
+            const fileNames = files
+              .map((f: { path: string; content: string }) =>
+                f.path.split("/").pop(),
+              )
+              .join(", ");
+            await publish({
+              channel: `project-${event.data.projectId}`,
+              topic: "code-update",
+              data: {
+                message: `Creating/Updating files: ${fileNames}`,
+              },
+            });
+
             const newFiles = await step?.run(
               "createOrUpdateFiles",
               async () => {
@@ -172,6 +228,14 @@ export const codeAgentFunction = inngest.createFunction(
             files: z.array(z.string()),
           }) as any,
           handler: async ({ files }, { step }) => {
+            await publish({
+              channel: `project-${event.data.projectId}`,
+              topic: "code-update",
+              data: {
+                message: `Reading files: ${files.join(", ")}`,
+              },
+            });
+
             return await step?.run("readFiles", async () => {
               try {
                 const sandbox = await getSandbox(sandboxId);
@@ -208,6 +272,14 @@ export const codeAgentFunction = inngest.createFunction(
             { query, orientation, purpose, filenameHint },
             { step },
           ) => {
+            await publish({
+              channel: `project-${event.data.projectId}`,
+              topic: "code-update",
+              data: {
+                message: `Searching Unsplash for: ${query}`,
+              },
+            });
+
             const accessKey = process.env.UNSPLASH_ACCESS_KEY;
             if (!accessKey) {
               return "Unsplash access key is not configured.";
@@ -342,6 +414,14 @@ export const codeAgentFunction = inngest.createFunction(
       result?.state?.data?.summary?.trim() ||
       "Created your application successfully.";
 
+    await publish({
+      channel: `project-${event.data.projectId}`,
+      topic: "code-update",
+      data: {
+        message: "Generating summary and title...",
+      },
+    });
+
     const { output: fragmentTitleOutput } =
       await fragmentTitleGenerator.run(summary);
 
@@ -381,6 +461,15 @@ export const codeAgentFunction = inngest.createFunction(
 
     await step.run("save-result", async () => {
       if (!hasFiles) {
+        await publish({
+          channel: `project-${event.data.projectId}`,
+          topic: "code-update",
+          data: {
+            message: "Error: Failed to generate files. Please try again.",
+            error: true,
+          },
+        });
+
         return await prisma.message.create({
           data: {
             content: "Something went wrong. Please try again.",
@@ -391,7 +480,7 @@ export const codeAgentFunction = inngest.createFunction(
         });
       }
 
-      return await prisma.message.create({
+      const message = await prisma.message.create({
         data: {
           content: generateResponseContent(),
           role: "ASSISTANT",
@@ -406,6 +495,17 @@ export const codeAgentFunction = inngest.createFunction(
           },
         },
       });
+
+      await publish({
+        channel: `project-${event.data.projectId}`,
+        topic: "code-update",
+        data: {
+          message: "Generation completed successfully!",
+          complete: true,
+        },
+      });
+
+      return message;
     });
 
     return {

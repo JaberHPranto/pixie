@@ -18,6 +18,7 @@ import { ProjectHeader } from "../components/project-header";
 import { UserControl } from "@/components/user-control";
 import { useAuth } from "@clerk/nextjs";
 import { ErrorBoundary } from "react-error-boundary";
+import { InitialLoadingAnimation } from "../components/initial-loading-animation";
 
 interface Props {
   projectId: string;
@@ -91,14 +92,20 @@ export const ProjectView = ({ projectId }: Props) => {
               </div>
             </div>
             <TabsContent value="preview">
-              {!!activeFragment && <FragmentWeb data={activeFragment} />}
+              {activeFragment ? (
+                <FragmentWeb data={activeFragment} />
+              ) : (
+                <InitialLoadingAnimation />
+              )}
             </TabsContent>
 
             <TabsContent value="code" className="min-h-0">
-              {!!activeFragment?.files && (
+              {activeFragment?.files ? (
                 <FileExplorer
                   files={activeFragment.files as { [key: string]: string }}
                 />
+              ) : (
+                <InitialLoadingAnimation />
               )}
             </TabsContent>
           </Tabs>
