@@ -26,10 +26,18 @@ export const MessageCard = ({
   onFragmentClick,
 }: Props) => {
   const renderUserMessage = () => {
+    let displayContent = content;
+    try {
+      const parsed = JSON.parse(content);
+      if (parsed.designSystem || parsed.constraints) {
+        displayContent = parsed.prompt ?? content;
+      }
+    } catch {}
+
     return (
       <div className="flex justify-end pb-4 pr-2 pl-10">
         <Card className="rounded-lg bg-muted p-3 shadow-none border-none max-w-[80%] break-words">
-          <MarkdownRenderer content={content} />
+          <MarkdownRenderer content={displayContent} />
         </Card>
       </div>
     );

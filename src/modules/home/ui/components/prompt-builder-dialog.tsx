@@ -25,9 +25,29 @@ import { ProfileSelector } from "./builder/profile-selector";
 
 interface BlueprintConfig {
   taste: string;
-  layout: string;
-  constraints: unknown;
-  structure: unknown;
+  layoutId: string | null;
+  designSystem: {
+    profile: {
+      name: string;
+      vibe: string;
+      description: string;
+    };
+    colors: {
+      primary: string[];
+      secondary: string[];
+    };
+    visualRules: string[];
+    typography: string[];
+    motion: string[];
+    effects: string[];
+    styleHints: string[];
+    avoids: string[];
+  };
+  layoutDetails: {
+    name: string;
+    description: string;
+    structure: string[];
+  } | null;
 }
 
 interface PromptBuilderDialogProps {
@@ -56,8 +76,12 @@ export const PromptBuilderDialog = ({
 
   const handleNext = () => {
     if (currentStep === "profile" && selectedProfile) setCurrentStep("layout");
-    else if (currentStep === "layout" && selectedLayout)
-      setCurrentStep("refine");
+    else if (currentStep === "layout") setCurrentStep("refine");
+  };
+
+  const handleSkipLayout = () => {
+    setSelectedLayout(null);
+    setCurrentStep("refine");
   };
 
   const handleBack = () => {
@@ -66,24 +90,43 @@ export const PromptBuilderDialog = ({
   };
 
   const handleFinish = () => {
-    if (!selectedProfile || !selectedLayout) return;
+    if (!selectedProfile) return;
 
     try {
       const profile = TASTE_PROFILES.find((p) => p.id === selectedProfile);
-      const layout = LAYOUT_ARCHETYPES.find((l) => l.id === selectedLayout);
+      if (!profile) throw new Error("Invalid profile selection");
 
-      if (!profile || !layout) throw new Error("Invalid selection");
+      const layout = selectedLayout
+        ? LAYOUT_ARCHETYPES.find((l) => l.id === selectedLayout)
+        : null;
 
       const config = {
         taste: selectedProfile,
-        layout: selectedLayout,
-        constraints: {
-          vibe: profile.vibe,
+        layoutId: selectedLayout,
+        designSystem: {
+          profile: {
+            name: profile.name,
+            vibe: profile.vibe,
+            description: profile.description,
+          },
+          colors: {
+            primary: profile.primaryColors,
+            secondary: profile.secondaryColors,
+          },
           visualRules: profile.visualRules,
           typography: profile.typography,
           motion: profile.motion,
+          effects: profile.effects,
+          styleHints: profile.styleHints,
+          avoids: profile.avoids || [],
         },
-        structure: layout.structure,
+        layoutDetails: layout
+          ? {
+              name: layout.name,
+              description: layout.description,
+              structure: layout.structure,
+            }
+          : null,
       };
 
       onAccept({ config, prompt: customInstructions });
@@ -177,13 +220,16 @@ export const PromptBuilderDialog = ({
             </div>
 
             <div className="flex gap-2">
+              {currentStep === "layout" && (
+                <Button variant="outline" onClick={handleSkipLayout}>
+                  Skip Layout
+                  <ArrowRightIcon className="size-4 ml-2" />
+                </Button>
+              )}
               {currentStep !== "refine" ? (
                 <Button
                   onClick={handleNext}
-                  disabled={
-                    (currentStep === "profile" && !selectedProfile) ||
-                    (currentStep === "layout" && !selectedLayout)
-                  }
+                  disabled={currentStep === "profile" && !selectedProfile}
                 >
                   Next
                   <ArrowRightIcon className="size-4 ml-2" />

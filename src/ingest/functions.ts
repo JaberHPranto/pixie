@@ -4,13 +4,10 @@ import {
   createAgent,
   createNetwork,
   createState,
-  createTool,
   Message,
   openai,
-  type Tool,
   type NetworkRun,
 } from "@inngest/agent-kit";
-import { z } from "zod";
 import { inngest } from "./client";
 import { getSandbox, lastAssistantTextMessage, extractSummary } from "./utils";
 import {
@@ -19,8 +16,13 @@ import {
   SYSTEM_PROMPT,
 } from "@/utils/prompt";
 import { prisma } from "@/lib/db";
-import { searchUnsplashPhoto } from "@/lib/unsplash";
 import { SANDBOX_TIMEOUT } from "@/utils/constants";
+import {
+  createTerminalTool,
+  createOrUpdateFilesTool,
+  createReadFilesTool,
+  createUnsplashImageTool,
+} from "./tools";
 
 interface AgentState {
   summary: string;
@@ -83,7 +85,7 @@ export const codeAgentFunction = inngest.createFunction(
           where: { projectId: event.data.projectId },
           orderBy: { createdAt: "desc" },
           include: { fragment: true },
-          take: 5,
+          take: 15,
         });
 
         let lastFiles = {};
@@ -107,6 +109,53 @@ export const codeAgentFunction = inngest.createFunction(
       },
     );
 
+    const isFollowUp =
+      Object.keys(lastFragmentFiles as Record<string, string>).length > 0;
+
+    // Restore previous files into the fresh sandbox to update the project state before making any changes.
+    if (isFollowUp) {
+      await step.run("restore-previous-files", async () => {
+        await publish({
+          channel: `project-${event.data.projectId}`,
+          topic: "code-update",
+          data: {
+            message: "Restoring previous project files...",
+          },
+        });
+        const sandbox = await getSandbox(sandboxId);
+        const files = lastFragmentFiles as Record<string, string>;
+
+        const dirs = new Set<string>();
+
+        for (const p of Object.keys(files)) {
+          const dir = p.substring(0, p.lastIndexOf("/"));
+          if (dir) dirs.add(dir);
+        }
+
+        await Promise.all(
+          Array.from(dirs).map((dir) =>
+            sandbox.commands.run(`mkdir -p "/home/user/${dir}"`),
+          ),
+        );
+
+        const writePromises: Promise<any>[] = Object.entries(files).map(
+          ([path, content]) =>
+            sandbox.files.write(`/home/user/${path}`, content),
+        );
+
+        await Promise.all(writePromises);
+      });
+    }
+
+    // Build a file manifest for follow-up context — exclude Shadcn UI components and lib/utils
+    const EXCLUDED_PREFIXES = ["components/ui/", "lib/utils"];
+    const existingFilesList = Object.keys(
+      lastFragmentFiles as Record<string, string>,
+    ).filter((f) => !EXCLUDED_PREFIXES.some((prefix) => f.startsWith(prefix)));
+    const followUpContext = isFollowUp
+      ? `\n\nIMPORTANT — FOLLOW-UP CONTEXT:\nThis is a follow-up message in an ongoing conversation. The user already has a working project with the following files:\n${existingFilesList.map((f) => `  - ${f}`).join("\n")}\n\nAll of these files have been restored into the sandbox and are live. You MUST:\n1. Read ONLY the specific files relevant to the user's request using readFiles — do NOT read all files. Shadcn UI components (components/ui/*) and lib/utils are pre-installed and unchanged; never read or modify them.\n2. Only modify the files that need to change — do NOT rewrite or recreate files that are unaffected.\n3. Preserve all existing functionality, structure, and styling unless the user explicitly asks for changes.\n4. Make surgical, minimal edits — if the user says "bold the headline", change ONLY that heading's classes, nothing else.\n5. Always include ALL previously existing files (unchanged) plus your modifications in createOrUpdateFiles calls to ensure nothing is lost.\n`
+      : "";
+
     const state = createState<AgentState>(
       {
         summary: "",
@@ -120,235 +169,17 @@ export const codeAgentFunction = inngest.createFunction(
     const codeAgent = createAgent<AgentState>({
       name: "code-agent",
       description: "An expert coding agent",
-      system: SYSTEM_PROMPT,
+      system: SYSTEM_PROMPT + followUpContext,
       model: openai({
         // model: "gpt-5.2",
         model: "gpt-4.1",
         // defaultParameters: { temperature: 0.1 },
       }),
       tools: [
-        // Terminal Tool
-        createTool({
-          name: "terminal",
-          description: "Use the terminal to run commands",
-          parameters: z.object({
-            command: z.string(),
-          }) as any,
-          handler: async ({ command }, { step }) => {
-            await publish({
-              channel: `project-${event.data.projectId}`,
-              topic: "code-update",
-              data: {
-                message: `Executing command: ${command}`,
-              },
-            });
-            return await step?.run("terminal", async () => {
-              const buffers = { stdout: "", stderr: "" };
-
-              try {
-                const sandbox = await getSandbox(sandboxId);
-                const { stdout } = await sandbox.commands.run(command, {
-                  onStdout(chunk) {
-                    buffers.stdout += chunk;
-                  },
-                  onStderr(chunk) {
-                    buffers.stderr += chunk;
-                  },
-                });
-
-                return stdout;
-              } catch (error) {
-                console.error(
-                  `Command failed\n${error} \nstdout: ${buffers.stdout}\nstderr: ${buffers.stderr}`,
-                );
-
-                return `Command failed\n${error} \nstdout: ${buffers.stdout}\nstderr: ${buffers.stderr}`;
-              }
-            });
-          },
-        }),
-
-        // Create or Update Files Tool
-        createTool({
-          name: "createOrUpdateFiles",
-          description: "Create or update files in the sandbox",
-          parameters: z.object({
-            files: z.array(
-              z.object({
-                path: z.string(),
-                content: z.string(),
-              }),
-            ),
-          }) as any,
-          handler: async (
-            { files },
-            { step, network }: Tool.Options<AgentState>,
-          ) => {
-            const fileNames = files
-              .map((f: { path: string; content: string }) =>
-                f.path.split("/").pop(),
-              )
-              .join(", ");
-            await publish({
-              channel: `project-${event.data.projectId}`,
-              topic: "code-update",
-              data: {
-                message: `Creating/Updating files: ${fileNames}`,
-              },
-            });
-
-            const newFiles = await step?.run(
-              "createOrUpdateFiles",
-              async () => {
-                try {
-                  const updatedFiles = network.state.data.files || {};
-                  const sandbox = await getSandbox(sandboxId);
-                  for (const file of files) {
-                    await sandbox.files.write(file.path, file.content);
-                    updatedFiles[file.path] = file.content;
-                  }
-
-                  return updatedFiles;
-                } catch (error) {
-                  return `Failed to create or update files: ${error}`;
-                }
-              },
-            );
-
-            if (typeof newFiles === "object")
-              network.state.data.files = newFiles;
-          },
-        }),
-
-        // Read Files Tool
-        createTool({
-          name: "readFiles",
-          description: "Read files from the sandbox",
-          parameters: z.object({
-            files: z.array(z.string()),
-          }) as any,
-          handler: async ({ files }, { step }) => {
-            await publish({
-              channel: `project-${event.data.projectId}`,
-              topic: "code-update",
-              data: {
-                message: `Reading files: ${files.join(", ")}`,
-              },
-            });
-
-            return await step?.run("readFiles", async () => {
-              try {
-                const sandbox = await getSandbox(sandboxId);
-                const contents = [];
-
-                for (const file of files) {
-                  const content = await sandbox.files.read(file);
-                  contents.push({ path: file, content });
-                }
-                return JSON.stringify(contents);
-              } catch (error) {
-                return `Failed to read files: ${error}`;
-              }
-            });
-          },
-        }),
-
-        // unsplash tool
-        createTool({
-          name: "unsplashImage",
-          description:
-            "Search unsplash for an image and download an image into /public/assets/images folder in the sandbox. Return the local path and attribute the image.",
-          parameters: z.object({
-            query: z.string(),
-            orientation: z
-              .enum(["landscape", "portrait", "squarish"])
-              .default("landscape"),
-            purpose: z
-              .enum(["hero", "feature", "background", "listing", "generic"])
-              .default("generic"),
-            filenameHint: z.string().default(""),
-          }) as any,
-          handler: async (
-            { query, orientation, purpose, filenameHint },
-            { step },
-          ) => {
-            await publish({
-              channel: `project-${event.data.projectId}`,
-              topic: "code-update",
-              data: {
-                message: `Searching Unsplash for: ${query}`,
-              },
-            });
-
-            const accessKey = process.env.UNSPLASH_ACCESS_KEY;
-            if (!accessKey) {
-              return "Unsplash access key is not configured.";
-            }
-
-            let searchResult;
-            let photo;
-
-            try {
-              searchResult = await searchUnsplashPhoto(
-                accessKey,
-                query,
-                orientation,
-              );
-              photo = searchResult.results[0];
-            } catch (error) {
-              return `Failed to search Unsplash: ${error instanceof Error ? error.message : String(error)}`;
-            }
-
-            if (searchResult.results.length === 0 || !photo) {
-              return `No results found for query: ${query}`;
-            }
-
-            const imageUrl =
-              purpose === "background" ? photo.urls.full : photo.urls.regular;
-            if (!imageUrl) {
-              return `No suitable image URL found for query: ${query}`;
-            }
-
-            const safeSlug = String(filenameHint ?? photo.id ?? query)
-              .toLowerCase()
-              .replace(/[^a-z0-9]+/g, "-") // Replaces any non-alphanumeric characters with hyphens
-
-              .replace(/(^-|-$)+/g, "") // Removes leading/trailing hyphens
-              .slice(0, 60); // Limits the length to 60 characters
-
-            const publicDir = "/home/user/public/assets/images";
-            const localPath = `${publicDir}/${safeSlug}.jpg`;
-            const publicPath = `/assets/images/${safeSlug}.jpg`;
-
-            const sandbox = await getSandbox(sandboxId);
-            await sandbox.commands.run(`mkdir -p "${publicDir}"`);
-
-            // Use curl to download the image to the sandbox
-            const cmd = `curl -L --fail --silent --show-error "${imageUrl}" -o "${localPath}"`;
-
-            const result = await sandbox.commands.run(cmd);
-
-            /**
-             * Exit Code Convention:
-             * 0 = Success (everything worked fine)
-             * Non-zero (1, 2, 3, etc.) = Error/Failure (something went wrong)
-             */
-            if (result.exitCode !== 0) {
-              return `Failed to download image. Command: ${cmd}, Error: ${result.stderr}`;
-            }
-
-            return JSON.stringify({
-              publicPath,
-              localFilePath: localPath,
-              attributions: {
-                photographerName: photo.user.name,
-                photographerUsername: photo.user.username,
-                photoLink: photo.links.html,
-                attributionUrl: `https://unsplash.com/@${photo.user.username}?utm_source=pixie&utm_medium=referral`,
-              },
-            });
-          },
-        }),
+        createTerminalTool(sandboxId, publish, event.data.projectId),
+        createOrUpdateFilesTool(sandboxId, publish, event.data.projectId),
+        createReadFilesTool(sandboxId, publish, event.data.projectId),
+        createUnsplashImageTool(sandboxId, publish, event.data.projectId),
       ],
 
       lifecycle: {
@@ -357,7 +188,6 @@ export const codeAgentFunction = inngest.createFunction(
 
           if (lastAssistantText && network) {
             if (lastAssistantText.includes("<task_summary>")) {
-              // Extract clean summary content from XML tags
               network.state.data.summary = extractSummary(lastAssistantText);
             }
           }

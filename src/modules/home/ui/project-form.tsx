@@ -34,6 +34,33 @@ const formSchema = z.object({
 
 type FormType = z.infer<typeof formSchema>;
 
+type Blueprint = {
+  taste: string;
+  layoutId: string | null;
+  designSystem: {
+    profile: {
+      name: string;
+      vibe: string;
+      description: string;
+    };
+    colors: {
+      primary: string[];
+      secondary: string[];
+    };
+    visualRules: string[];
+    typography: string[];
+    motion: string[];
+    effects: string[];
+    styleHints: string[];
+    avoids: string[];
+  };
+  layoutDetails: {
+    name: string;
+    description: string;
+    structure: string[];
+  } | null;
+};
+
 export const ProjectForm = () => {
   const router = useRouter();
   const clerk = useClerk();
@@ -41,10 +68,8 @@ export const ProjectForm = () => {
   const [isFocused, setIsFocused] = React.useState(false);
   const [showEnhancer, setShowEnhancer] = React.useState(false);
   const [showBuilder, setShowBuilder] = React.useState(false);
-  const [activeBlueprint, setActiveBlueprint] = React.useState<{
-    taste: string;
-    layout: string;
-  } | null>(null);
+  const [activeBlueprint, setActiveBlueprint] =
+    React.useState<Blueprint | null>(null);
 
   const queryClient = useQueryClient();
 
@@ -112,12 +137,7 @@ export const ProjectForm = () => {
   };
 
   const handleBlueprintAccept = (data: {
-    config: {
-      taste: string;
-      layout: string;
-      constraints: unknown;
-      structure: unknown;
-    };
+    config: Blueprint;
     prompt: string;
   }) => {
     setActiveBlueprint(data.config);
@@ -147,7 +167,8 @@ export const ProjectForm = () => {
                   Blueprint Active:
                 </span>
                 <span className="ml-1 text-muted-foreground">
-                  {activeBlueprint.taste} + {activeBlueprint.layout}
+                  {activeBlueprint.taste}
+                  {activeBlueprint.layoutId && ` + ${activeBlueprint.layoutId}`}
                 </span>
               </div>
             </div>

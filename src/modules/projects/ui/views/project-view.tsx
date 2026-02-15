@@ -86,7 +86,11 @@ export const ProjectView = ({ projectId }: Props) => {
                   <EyeIcon />
                   <span>Demo</span>
                 </TabsTrigger>
-                <TabsTrigger value="code" className="rounded-md">
+                <TabsTrigger
+                  value="code"
+                  className="rounded-md"
+                  disabled={!activeFragment?.files}
+                >
                   <CodeIcon />
                   <span>Code</span>
                 </TabsTrigger>

@@ -120,19 +120,31 @@ const formatMessage = (message: string, isError = false) => {
   }
 
   const commandPattern =
-    /^(Executing command:|Searching Unsplash for:|Creating\/Updating files:|Reading files:)\s*(.+)$/;
+    /^(Executing command:|Searching Unsplash for:|Creating\/Updating files:|Reading files:)\s*([\s\S]+)$/;
   const match = message.match(commandPattern);
 
   if (match) {
     const [, label, command] = match;
+    const lines = command.split('\n').filter(line => line.trim());
+
     return (
       <div className="flex flex-col gap-1">
         <span className="text-xs text-muted-foreground font-medium">
           {label}
         </span>
-        <code className="text-xs bg-muted/50 px-2 py-1 rounded font-mono break-all">
-          {command}
-        </code>
+        {lines.length === 1 ? (
+          <code className="text-xs bg-muted/50 px-2 py-1 rounded font-mono break-all">
+            {lines[0]}
+          </code>
+        ) : (
+          <div className="flex flex-col gap-0.5">
+            {lines.map((line, idx) => (
+              <code key={idx} className="text-xs bg-muted/50 px-2 py-1 rounded font-mono break-all">
+                {line}
+              </code>
+            ))}
+          </div>
+        )}
       </div>
     );
   }

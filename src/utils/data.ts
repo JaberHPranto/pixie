@@ -33,7 +33,7 @@ export const PROJECT_TEMPLATES = [
     emoji: "🔑",
     title: "Login Section",
     prompt:
-      "Create a professional login section with a split-screen layout. One side should feature a vibrant mesh gradient or an abstract image placeholder, while the other contains a clean white form. Include email/password inputs with Lucide icons, a 'Stay logged in' checkbox, and styled social login buttons for Google and GitHub.",
+      "Create a professional login section with a split-screen layout. One side should feature a vibrant mesh gradient or an abstract image placeholder, while the other contains a clean white form. Include email/password inputs with Lucide icons, a 'Stay logged in' checkbox and a primary login button. Add a smooth fade-in animation for the form on page load.",
   },
   {
     emoji: "📰",
