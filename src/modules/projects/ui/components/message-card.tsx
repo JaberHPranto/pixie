@@ -27,6 +27,8 @@ export const MessageCard = ({
 }: Props) => {
   const renderUserMessage = () => {
     let displayContent = content;
+    let selectedElement: { tag: string; text?: string } | null = null;
+
     try {
       const parsed = JSON.parse(content);
       if (parsed.designSystem || parsed.constraints) {
@@ -34,11 +36,41 @@ export const MessageCard = ({
       }
     } catch {}
 
+    const visualEditMatch = displayContent.match(
+      /^\[Visual Edit — Selected <(.+?)>(?: with text "(.+?)")?\s*\(selector:.+?\)\]\s*/,
+    );
+    if (visualEditMatch) {
+      selectedElement = {
+        tag: visualEditMatch[1],
+        text: visualEditMatch[2],
+      };
+      displayContent = displayContent.replace(visualEditMatch[0], "");
+    }
+
     return (
       <div className="flex justify-end pb-4 pr-2 pl-10">
-        <Card className="rounded-lg bg-muted p-3 shadow-none border-none max-w-[80%] break-words">
-          <MarkdownRenderer content={displayContent} />
-        </Card>
+        <div className="flex flex-col items-end gap-2 max-w-[80%]">
+          {selectedElement && (
+            <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-md bg-emerald-500/10 border border-emerald-500/30">
+              <span className="bg-emerald-600 text-white text-[10px] font-mono font-semibold px-1.5 py-0.5 rounded">
+                {selectedElement.tag}
+              </span>
+              {selectedElement.text && (
+                <span className="text-xs text-muted-foreground">
+                  {selectedElement.text.length > 40
+                    ? selectedElement.text.substring(0, 40) + "…"
+                    : selectedElement.text}
+                </span>
+              )}
+              <span className="text-[10px] text-emerald-600 font-medium">
+                Selected element
+              </span>
+            </div>
+          )}
+          <Card className="rounded-lg bg-muted p-3 shadow-none border-none break-words">
+            <MarkdownRenderer content={displayContent} />
+          </Card>
+        </div>
       </div>
     );
   };

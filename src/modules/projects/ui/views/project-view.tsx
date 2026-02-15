@@ -10,12 +10,13 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { UserControl } from "@/components/user-control";
 import { Fragment } from "@/generated/prisma";
+import { SelectedElement } from "@/types/element-picker";
 import { useTRPC } from "@/trpc/client";
 import { useAuth } from "@clerk/nextjs";
 import { useQuery } from "@tanstack/react-query";
 import { CodeIcon, CrownIcon, EyeIcon, Loader2 } from "lucide-react";
 import Link from "next/link";
-import { Suspense, useState } from "react";
+import { Suspense, useCallback, useState } from "react";
 import { ErrorBoundary } from "react-error-boundary";
 import { FragmentWeb } from "../components/fragment-web";
 import { InitialLoadingAnimation } from "../components/initial-loading-animation";
@@ -31,6 +32,9 @@ type TabView = "code" | "preview";
 export const ProjectView = ({ projectId }: Props) => {
   const [activeFragment, setActiveFragment] = useState<Fragment | null>(null);
   const [tabState, setTabState] = useState<TabView>("preview");
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [selectedElement, setSelectedElement] =
+    useState<SelectedElement | null>(null);
 
   const trpc = useTRPC();
   const { data: usage } = useQuery(trpc.usage.status.queryOptions());
@@ -38,6 +42,27 @@ export const ProjectView = ({ projectId }: Props) => {
   const { has, isLoaded } = useAuth();
   const hasProAccess = isLoaded ? has?.({ plan: "pro_user" }) : false;
   const showUpgradeButton = isLoaded && !hasProAccess;
+
+  const handleToggleEditMode = useCallback(() => {
+    if (isEditMode) {
+      setSelectedElement(null);
+    }
+    setIsEditMode(!isEditMode);
+    setTabState("preview");
+  }, [isEditMode]);
+
+  const handleExitEditMode = useCallback(() => {
+    setIsEditMode(false);
+    setSelectedElement(null);
+  }, []);
+
+  const handleClearElement = useCallback(() => {
+    setSelectedElement(null);
+  }, []);
+
+  const handleElementSelected = useCallback((element: SelectedElement) => {
+    setSelectedElement(element);
+  }, []);
 
   return (
     <div className="h-screen">
@@ -67,6 +92,10 @@ export const ProjectView = ({ projectId }: Props) => {
                 projectId={projectId}
                 activeFragment={activeFragment}
                 setActiveFragment={setActiveFragment}
+                selectedElement={selectedElement}
+                onClearElement={handleClearElement}
+                isEditMode={isEditMode}
+                onExitEditMode={handleExitEditMode}
               />
             </Suspense>
           </ErrorBoundary>
@@ -78,7 +107,12 @@ export const ProjectView = ({ projectId }: Props) => {
             className="h-full gap-y-0"
             defaultValue="preview"
             value={tabState}
-            onValueChange={(value) => setTabState(value as TabView)}
+            onValueChange={(value) => {
+              setTabState(value as TabView);
+              if (value === "code" && isEditMode) {
+                handleExitEditMode();
+              }
+            }}
           >
             <div className="w-full flex items-center p-2 border-b gap-x-2">
               <TabsList className="h-8 p-0 border rounded-md">
@@ -133,7 +167,12 @@ export const ProjectView = ({ projectId }: Props) => {
             </div>
             <TabsContent value="preview">
               {activeFragment ? (
-                <FragmentWeb data={activeFragment} />
+                <FragmentWeb
+                  data={activeFragment}
+                  isEditMode={isEditMode}
+                  onToggleEditMode={handleToggleEditMode}
+                  onElementSelected={handleElementSelected}
+                />
               ) : (
                 <InitialLoadingAnimation />
               )}

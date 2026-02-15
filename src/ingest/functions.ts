@@ -17,6 +17,7 @@ import {
 } from "@/utils/prompt";
 import { prisma } from "@/lib/db";
 import { SANDBOX_TIMEOUT } from "@/utils/constants";
+import { ELEMENT_PICKER_SCRIPT } from "@/utils/element-picker-script";
 import {
   createTerminalTool,
   createOrUpdateFilesTool,
@@ -277,6 +278,35 @@ export const codeAgentFunction = inngest.createFunction(
         return response.content.map((chunk) => chunk).join("");
       } else return response.content;
     };
+
+    await step.run("inject-element-picker", async () => {
+      try {
+        const sandbox = await getSandbox(sandboxId);
+        await sandbox.files.write(
+          "/home/user/public/_pixie-picker.js",
+          ELEMENT_PICKER_SCRIPT,
+        );
+        const layoutContent = await sandbox.files.read(
+          "/home/user/app/layout.tsx",
+        );
+        if (
+          layoutContent &&
+          !layoutContent.includes("_pixie-picker.js") &&
+          layoutContent.includes("</body>")
+        ) {
+          const modifiedLayout = layoutContent.replace(
+            "</body>",
+            '<script src="/_pixie-picker.js" defer></script>\n</body>',
+          );
+          await sandbox.files.write(
+            "/home/user/app/layout.tsx",
+            modifiedLayout,
+          );
+        }
+      } catch (err) {
+        console.error("Failed to inject element picker:", err);
+      }
+    });
 
     const sandboxUrl = await step.run("get-sandbox-url", async () => {
       const sandbox = await getSandbox(sandboxId);

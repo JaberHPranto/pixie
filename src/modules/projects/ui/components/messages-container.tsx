@@ -1,21 +1,30 @@
 import { useTRPC } from "@/trpc/client";
 import { useSuspenseQuery } from "@tanstack/react-query";
-import React, { useEffect, useRef } from "react";
+import React, { useEffect } from "react";
 import { MessageCard } from "./message-card";
 import { MessageForm } from "./message-form";
 import { Fragment } from "@/generated/prisma";
 import { MessageLoading } from "./message-loading";
+import { SelectedElement } from "@/types/element-picker";
 
 interface Props {
   projectId: string;
   activeFragment: Fragment | null;
   setActiveFragment: React.Dispatch<React.SetStateAction<Fragment | null>>;
+  selectedElement: SelectedElement | null;
+  onClearElement: () => void;
+  isEditMode: boolean;
+  onExitEditMode: () => void;
 }
 
 export const MessagesContainer = ({
   projectId,
   activeFragment,
   setActiveFragment,
+  selectedElement,
+  onClearElement,
+  isEditMode,
+  onExitEditMode,
 }: Props) => {
   const trpc = useTRPC();
   const bottomRef = React.useRef<HTMLDivElement>(null);
@@ -77,7 +86,13 @@ export const MessagesContainer = ({
 
       <div className="relative p-3 pt-1">
         <div className="absolute -top-6 left-0 right-0 h-6 bg-gradient-to-b from-transparent to-background pointer-events-none" />
-        <MessageForm projectId={projectId} />
+        <MessageForm
+          projectId={projectId}
+          selectedElement={selectedElement}
+          onClearElement={onClearElement}
+          onExitEditMode={onExitEditMode}
+          isEditMode={isEditMode}
+        />
       </div>
     </div>
   );

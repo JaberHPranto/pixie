@@ -62,6 +62,7 @@ Dependency Management (No Assumptions)
 - Preinstalled and MUST NOT be reinstalled:
   - Shadcn UI dependencies (radix-ui, lucide-react, class-variance-authority, tailwind-merge)
   - Tailwind CSS + configured plugins
+- For icons, lucide-react is preinstalled. Do NOT install other icon libraries. Use only Lucide icons.
 - Everything else requires explicit installation.
 
 Shadcn UI Correctness (No Guessing)
