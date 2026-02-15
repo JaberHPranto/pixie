@@ -23,7 +23,7 @@ export const ProjectList = () => {
   }
 
   return (
-    <div className="w-full bg-white dark:bg-sidebar rounded-xl p-8 border flex flex-col gap-y-6 sm:gap-y-4 mt-20">
+    <div className="w-full backdrop-blur-xl bg-white/80 dark:bg-slate-900/20 border border-indigo-100/50 dark:border-white/10 shadow-xl rounded-2xl p-8 flex flex-col gap-y-6 sm:gap-y-4 mt-20">
       <h2 className="text-2xl font-semibold">Saved Projects</h2>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">

@@ -13,7 +13,12 @@ import { PROJECT_TEMPLATES } from "@/utils/data";
 import { useClerk } from "@clerk/nextjs";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { ArrowUpIcon, Loader2Icon, SparklesIcon } from "lucide-react";
+import {
+  ArrowUpIcon,
+  BrushCleaning,
+  Loader2Icon,
+  SparklesIcon,
+} from "lucide-react";
 import { useRouter } from "next/navigation";
 import React from "react";
 import { useForm } from "react-hook-form";
@@ -149,9 +154,11 @@ export const ProjectForm = () => {
       <form
         onSubmit={form.handleSubmit(onSubmit)}
         className={cn(
-          "relative border p-4 pt-1 rounded-xl bg-sidebar dark:bg-sidebar transition-all",
+          "relative z-10 p-6 rounded-2xl backdrop-blur-2xl transition-all duration-300 border",
+          "bg-white/80 border-indigo-100/50 shadow-xl ring-1 ring-indigo-50", // Light mode
+          "dark:bg-slate-900/40 dark:border-white/10 dark:shadow-[0_0_40px_-10px_rgba(0,0,0,0.3)] dark:ring-0", // Dark mode
           {
-            "shadow-xs": isFocused,
+            "ring-2 ring-primary/50 dark:ring-primary/40": isFocused,
           },
         )}
       >
@@ -198,7 +205,7 @@ export const ProjectForm = () => {
                   disabled={isPending}
                   minRows={2}
                   maxRows={5}
-                  className="pt-4 resize-none border-none w-full outline-none bg-transparent"
+                  className="pt-2 resize-none border-none w-full outline-none bg-transparent"
                   placeholder={
                     activeBlueprint
                       ? "Add any extra details..."
@@ -239,7 +246,7 @@ export const ProjectForm = () => {
               type="button"
               variant={"outline"}
               size={"sm"}
-              className="bg-white text-xs dark:bg-sidebar border-dashed border-primary/50 hover:border-primary hover:bg-primary/5"
+              className="bg-muted/50 text-xs hover:bg-muted/80 border-dashed border-primary/20 hover:border-primary/50 transition-colors"
               onClick={() => setShowBuilder(true)}
             >
               <LayoutTemplateIcon className="size-3" />
@@ -252,16 +259,17 @@ export const ProjectForm = () => {
               type="button"
               size="sm"
               variant="outline"
-              className="h-8 gap-1.5"
+              className="h-8 gap-1.5 dark:text-white/80 hover:text-foreground hover:bg-primary/10 transition-colors"
               onClick={handleOpenEnhancer}
               disabled={isPending || !form.watch("value")}
             >
-              <SparklesIcon className="size-3" />
+              <BrushCleaning className="size-3 rotate-45" />
               <span className="hidden sm:inline text-xs">Enhance</span>
             </Button>
 
             <Button
               type="submit"
+              size={"icon"}
               className={cn(
                 "size-8 rounded-full flex items-center justify-center",
                 isButtonDisabled && "bg-muted-foreground border",
@@ -275,7 +283,7 @@ export const ProjectForm = () => {
               {isPending ? (
                 <Loader2Icon className="size-4 animate-spin" />
               ) : (
-                <ArrowUpIcon />
+                <ArrowUpIcon className="size-3.5" />
               )}
             </Button>
           </div>
@@ -294,7 +302,7 @@ export const ProjectForm = () => {
                   key={`${template.title}-${index}`}
                   variant={"outline"}
                   size={"sm"}
-                  className="shrink-0 bg-white/90 backdrop-blur-sm dark:bg-sidebar/90 !text-xs"
+                  className="shrink-0 bg-background/50 hover:bg-background/80 border-transparent shadow-sm backdrop-blur-md !text-xs transition-colors"
                   onClick={() => form.setValue("value", template.prompt)}
                 >
                   {template.emoji} &nbsp; {template.title}
