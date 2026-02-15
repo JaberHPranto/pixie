@@ -111,8 +111,6 @@ Plans are evaluated via Clerk, and the UI shows remaining credits + reset timing
 
 When a user is out of credits, Pixie directs them to the Pricing page.
 
----
-
 ## How It Works (Architecture Overview)
 
 ### High-Level Components
@@ -149,8 +147,6 @@ When a user is out of credits, Pixie directs them to the Pricing page.
    - Saves an assistant message + fragment (URL + files) to Postgres
    - Publishes real-time progress events throughout
 
----
-
 ## Tech Stack
 
 ### Product / UI
@@ -183,8 +179,6 @@ When a user is out of credits, Pixie directs them to the Pricing page.
 
 - Unsplash API integration for asset fetching inside the sandbox
 
----
-
 ## Repository Structure
 
 - `src/app` — App Router routes (home, auth, pricing, projects, API routes)
@@ -198,8 +192,6 @@ When a user is out of credits, Pixie directs them to the Pricing page.
 - `prisma/` — schema + migrations
 - `public/` — product assets (logos, hero image)
 - `sandbox-templates/` — E2B template config (Next.js + shadcn bootstrap)
-
----
 
 ## Local Development
 
