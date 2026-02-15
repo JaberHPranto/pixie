@@ -40,7 +40,7 @@ export async function consumeCredits() {
   try {
     const result = await usage.consume(userId, GENERATE_COST);
     return result;
-  } catch (err) {
+  } catch {
     throw new Error(
       "You have reached your free usage limit. Please upgrade to continue using the service.",
     );
