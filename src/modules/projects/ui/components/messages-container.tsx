@@ -30,6 +30,12 @@ export const MessagesContainer = ({
   const bottomRef = React.useRef<HTMLDivElement>(null);
   const lastAssistantMessageRef = React.useRef<string | null>(null);
 
+  const scrollToBottom = React.useCallback(() => {
+    window.requestAnimationFrame(() => {
+      bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    });
+  }, []);
+
   const { data: messages } = useSuspenseQuery(
     trpc.messages.getMany.queryOptions(
       { projectId },
@@ -54,10 +60,8 @@ export const MessagesContainer = ({
   }, [messages, setActiveFragment]);
 
   useEffect(() => {
-    if (bottomRef.current?.scrollIntoView) {
-      bottomRef.current.scrollIntoView({ behavior: "smooth" });
-    }
-  }, [messages.length]);
+    scrollToBottom();
+  }, [messages.length, scrollToBottom]);
 
   const lastMessage = messages?.[messages.length - 1];
   const isLastMessageUser = lastMessage?.role === "USER";
@@ -80,7 +84,12 @@ export const MessagesContainer = ({
           ))}
         </div>
 
-        {isLastMessageUser && <MessageLoading projectId={projectId} />}
+        {isLastMessageUser && (
+          <MessageLoading
+            projectId={projectId}
+            onRealtimeUpdate={scrollToBottom}
+          />
+        )}
         <div ref={bottomRef} />
       </div>
 

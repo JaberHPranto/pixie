@@ -7,7 +7,7 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { cn } from "@/lib/utils";
-import { useInngestSubscription } from "@inngest/realtime/hooks";
+import { useRealtime } from "inngest/react";
 import {
   Box,
   CheckCircle,
@@ -109,7 +109,15 @@ const getEventIcon = (message: string, isError: boolean) => {
 
 interface MessageLoadingProps {
   projectId: string;
+  onRealtimeUpdate?: () => void;
 }
+
+interface CodeUpdateEventData {
+  message?: string;
+  error?: boolean;
+  complete?: boolean;
+}
+
 const formatMessage = (message: string, isError = false) => {
   if (isError) {
     return (
@@ -125,7 +133,7 @@ const formatMessage = (message: string, isError = false) => {
 
   if (match) {
     const [, label, command] = match;
-    const lines = command.split('\n').filter(line => line.trim());
+    const lines = command.split("\n").filter((line) => line.trim());
 
     return (
       <div className="flex flex-col gap-1">
@@ -139,7 +147,10 @@ const formatMessage = (message: string, isError = false) => {
         ) : (
           <div className="flex flex-col gap-0.5">
             {lines.map((line, idx) => (
-              <code key={idx} className="text-xs bg-muted/50 px-2 py-1 rounded font-mono break-all">
+              <code
+                key={idx}
+                className="text-xs bg-muted/50 px-2 py-1 rounded font-mono break-all"
+              >
                 {line}
               </code>
             ))}
@@ -152,21 +163,39 @@ const formatMessage = (message: string, isError = false) => {
   return <span className="text-sm font-medium leading-none">{message}</span>;
 };
 
-export const MessageLoading = ({ projectId }: MessageLoadingProps) => {
+export const MessageLoading = ({
+  projectId,
+  onRealtimeUpdate,
+}: MessageLoadingProps) => {
   const [isOpen, setIsOpen] = useState(true);
 
   const fetchToken = useCallback(async () => {
     return generateInngestToken(projectId);
   }, [projectId]);
 
-  const { data: events = [] } = useInngestSubscription({
-    refreshToken: fetchToken,
+  const { messages } = useRealtime({
+    channel: `project-${projectId}`,
+    topics: ["code-update"] as const,
+    token: fetchToken,
+    apiBaseUrl: process.env.NEXT_PUBLIC_INNGEST_BASE_URL,
   });
+  const events = messages.all;
+
+  useEffect(() => {
+    if (events.length > 0) {
+      onRealtimeUpdate?.();
+    }
+  }, [events.length, onRealtimeUpdate]);
 
   const hasEvents = events.length > 0;
-  const hasError = events.some((e: any) => e.data?.error === true);
+  const hasError = events.some(
+    (e) => (e.data as CodeUpdateEventData | undefined)?.error === true,
+  );
   const lastEvent = events[events.length - 1];
-  const isComplete = hasEvents && !hasError && lastEvent?.data?.complete;
+  const isComplete =
+    hasEvents &&
+    !hasError &&
+    (lastEvent?.data as CodeUpdateEventData | undefined)?.complete;
 
   return (
     <div className="flex flex-col group px-2 pb-4 transition-opacity duration-500 ease-out">
@@ -226,10 +255,11 @@ export const MessageLoading = ({ projectId }: MessageLoadingProps) => {
                 {/* Timeline vertical line - only between dots */}
                 <div className="absolute left-[20px] top-[19px] bottom-[19px] w-px bg-border" />
 
-                {events.map((event: any, index: number) => {
-                  const message = event.data?.message ?? "Processing...";
+                {events.map((event, index: number) => {
+                  const data = event.data as CodeUpdateEventData | undefined;
+                  const message = data?.message ?? "Processing...";
                   const isLatest = index === events.length - 1 && !isComplete;
-                  const isError = event.data?.error === true;
+                  const isError = data?.error === true;
                   const EventIcon = getEventIcon(message, isError);
 
                   return (

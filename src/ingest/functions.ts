@@ -8,6 +8,7 @@ import {
   openai,
   type NetworkRun,
 } from "@inngest/agent-kit";
+import { channel, staticSchema } from "inngest/realtime";
 import { inngest } from "./client";
 import { getSandbox, lastAssistantTextMessage, extractSummary } from "./utils";
 import {
@@ -32,9 +33,23 @@ interface AgentState {
   };
 }
 
+type CodeUpdateData = Record<string, unknown> & {
+  message?: string;
+  error?: boolean;
+  complete?: boolean;
+};
+
+const codeUpdateChannel = channel({
+  name: (projectId: string) => `project-${projectId}`,
+  topics: {
+    "code-update": { schema: staticSchema<CodeUpdateData>() },
+  },
+});
+
 export const codeAgentFunction = inngest.createFunction(
   {
     id: "code-agent",
+    triggers: [{ event: "code-agent/run" }],
     retries: 3,
     onFailure: async ({ error, event }) => {
       console.error("Code Agent failed", { error, event });
@@ -56,8 +71,29 @@ export const codeAgentFunction = inngest.createFunction(
       }
     },
   },
-  { event: "code-agent/run" },
-  async ({ event, step, publish }: any) => {
+  async ({ event, step }: any) => {
+    const publish = async ({
+      channel,
+      topic,
+      data,
+    }: {
+      channel: string;
+      topic: string;
+      data: Record<string, unknown>;
+    }) => {
+      return inngest.realtime.publish(
+        {
+          channel,
+          topic,
+          config:
+            codeUpdateChannel.topics[
+              topic as keyof typeof codeUpdateChannel.topics
+            ],
+        } as any,
+        data,
+      );
+    };
+
     const sandboxId = await step.run("get-sandbox-id", async () => {
       await publish({
         channel: `project-${event.data.projectId}`,
@@ -215,9 +251,10 @@ export const codeAgentFunction = inngest.createFunction(
       },
     });
 
-    let result: NetworkRun<AgentState> | undefined;
-
-    result = await network.run(event.data.value, { state });
+    const result: NetworkRun<AgentState> | undefined = await network.run(
+      event.data.value,
+      { state },
+    );
 
     const fragmentTitleGenerator = createAgent({
       name: "fragment-title-generator",
